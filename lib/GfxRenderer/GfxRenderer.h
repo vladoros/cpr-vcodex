@@ -97,6 +97,8 @@ class GfxRenderer {
   const std::map<int, SdCardFont*>& getSdCardFonts() const { return sdCardFonts_; }
   bool isSdCardFont(int fontId) const { return sdCardFonts_.count(fontId) > 0; }
   void ensureSdCardFontReady(int fontId, const char* utf8Text, uint8_t styleMask = 0x0F) const;
+  void ensureSdCardFontReady(int fontId, const std::vector<std::string>& words, bool includeHyphen,
+                             uint8_t styleMask = 0x0F) const;
 
   // Orientation control (affects logical width/height and coordinate transforms)
   void setOrientation(const Orientation o) { orientation = o; }
@@ -199,4 +201,8 @@ class GfxRenderer {
   uint16_t getDisplayWidth() const { return panelWidth; }
   uint16_t getDisplayHeight() const { return panelHeight; }
   uint16_t getDisplayWidthBytes() const { return panelWidthBytes; }
+  size_t getRegionByteSize(int logicalX, int logicalY, int logicalW, int logicalH) const;
+  bool copyRegionToBuffer(int logicalX, int logicalY, int logicalW, int logicalH, uint8_t* buf, size_t bufSize) const;
+  bool copyBufferToRegion(int logicalX, int logicalY, int logicalW, int logicalH, const uint8_t* buf,
+                          size_t bufSize) const;
 };

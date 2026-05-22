@@ -7,6 +7,7 @@
 #include <HalPowerManager.h>
 #include <HalStorage.h>
 #include <I18n.h>
+#include <Logging.h>
 #include <Txt.h>
 #include <Utf8.h>
 #include <Xtc.h>
@@ -622,36 +623,32 @@ void HomeActivity::onExit() {
 }
 
 bool HomeActivity::storeCoverBuffer() {
-  uint8_t* frameBuffer = renderer.getFrameBuffer();
-  if (!frameBuffer) {
-    return false;
-  }
-
+  if (coverRectW <= 0 || coverRectH <= 0) return false;
   freeCoverBuffer();
 
-  const size_t bufferSize = renderer.getBufferSize();
-  coverBuffer = static_cast<uint8_t*>(malloc(bufferSize));
+  const size_t needed = renderer.getRegionByteSize(coverRectX, coverRectY, coverRectW, coverRectH);
+  if (needed == 0) return false;
+
+  coverBuffer = static_cast<uint8_t*>(malloc(needed));
   if (!coverBuffer) {
+    LOG_ERR("HOME", "OOM: cover buffer (%u bytes)", static_cast<unsigned>(needed));
+    return false;
+  }
+  coverBufferSize = needed;
+
+  if (!renderer.copyRegionToBuffer(coverRectX, coverRectY, coverRectW, coverRectH, coverBuffer, coverBufferSize)) {
+    free(coverBuffer);
+    coverBuffer = nullptr;
+    coverBufferSize = 0;
     return false;
   }
 
-  memcpy(coverBuffer, frameBuffer, bufferSize);
   return true;
 }
 
 bool HomeActivity::restoreCoverBuffer() {
-  if (!coverBuffer) {
-    return false;
-  }
-
-  uint8_t* frameBuffer = renderer.getFrameBuffer();
-  if (!frameBuffer) {
-    return false;
-  }
-
-  const size_t bufferSize = renderer.getBufferSize();
-  memcpy(frameBuffer, coverBuffer, bufferSize);
-  return true;
+  if (!coverBuffer || coverRectW <= 0 || coverRectH <= 0) return false;
+  return renderer.copyBufferToRegion(coverRectX, coverRectY, coverRectW, coverRectH, coverBuffer, coverBufferSize);
 }
 
 void HomeActivity::freeCoverBuffer() {
@@ -659,6 +656,7 @@ void HomeActivity::freeCoverBuffer() {
     free(coverBuffer);
     coverBuffer = nullptr;
   }
+  coverBufferSize = 0;
   coverBufferStored = false;
 }
 
@@ -1092,7 +1090,11 @@ void HomeActivity::render(RenderLock&&) {
     GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.homeTopPadding}, nullptr, nullptr);
     HeaderDateUtils::drawTopLine(renderer, HeaderDateUtils::getDisplayDateText());
 
-    GUI.drawRecentBookCover(renderer, Rect{0, metrics.homeTopPadding, pageWidth, metrics.homeCoverTileHeight},
+    coverRectX = 0;
+    coverRectY = metrics.homeTopPadding;
+    coverRectW = pageWidth;
+    coverRectH = metrics.homeCoverTileHeight;
+    GUI.drawRecentBookCover(renderer, Rect{coverRectX, coverRectY, coverRectW, coverRectH},
                             recentBooks, selectorIndex, coverRendered, coverBufferStored, bufferRestored,
                             std::bind(&HomeActivity::storeCoverBuffer, this));
   }

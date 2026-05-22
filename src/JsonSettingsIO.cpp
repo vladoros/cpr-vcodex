@@ -367,6 +367,7 @@ bool loadSettingsDirect(CrossPointSettings& s, const JsonDocument& doc, bool* ne
   loadEnum("imageRendering", s.imageRendering, CrossPointSettings::IMAGE_RENDERING_COUNT);
 
   loadEnum("sideButtonLayout", s.sideButtonLayout, CrossPointSettings::SIDE_BUTTON_LAYOUT_COUNT);
+  loadToggle("frontButtonFollowOrientation", s.frontButtonFollowOrientation);
   if (!doc["longPressButtonBehavior"].isNull()) {
     loadEnum("longPressButtonBehavior", s.longPressButtonBehavior,
              CrossPointSettings::LONG_PRESS_BUTTON_BEHAVIOR_COUNT);
@@ -512,6 +513,10 @@ bool loadSettingsDirect(CrossPointSettings& s, const JsonDocument& doc, bool* ne
       clamp(doc["fileTransferShortcut"] | s.fileTransferShortcut, shortcutLocationCount, s.fileTransferShortcut);
   s.fileTransferShortcutOrder = clamp(doc["fileTransferShortcutOrder"] | s.fileTransferShortcutOrder,
                                       shortcutOrderCount, s.fileTransferShortcutOrder);
+  s.screenCleanShortcut =
+      clamp(doc["screenCleanShortcut"] | s.screenCleanShortcut, shortcutLocationCount, s.screenCleanShortcut);
+  s.screenCleanShortcutOrder = clamp(doc["screenCleanShortcutOrder"] | s.screenCleanShortcutOrder, shortcutOrderCount,
+                                     s.screenCleanShortcutOrder);
   s.sleepShortcut = clamp(doc["sleepShortcut"] | s.sleepShortcut, shortcutLocationCount, s.sleepShortcut);
   s.sleepShortcutOrder =
       clamp(doc["sleepShortcutOrder"] | s.sleepShortcutOrder, shortcutOrderCount, s.sleepShortcutOrder);
@@ -562,6 +567,9 @@ bool loadSettingsDirect(CrossPointSettings& s, const JsonDocument& doc, bool* ne
   s.fileTransferShortcutVisible =
       clamp(doc["fileTransferShortcutVisible"] | s.fileTransferShortcutVisible, static_cast<uint8_t>(2),
             s.fileTransferShortcutVisible);
+  s.screenCleanShortcutVisible =
+      clamp(doc["screenCleanShortcutVisible"] | s.screenCleanShortcutVisible, static_cast<uint8_t>(2),
+            s.screenCleanShortcutVisible);
   s.sleepShortcutVisible =
       clamp(doc["sleepShortcutVisible"] | s.sleepShortcutVisible, static_cast<uint8_t>(2), s.sleepShortcutVisible);
   s.opdsBrowserShortcutVisible = clamp(doc["opdsBrowserShortcutVisible"] | s.opdsBrowserShortcutVisible,
@@ -724,6 +732,7 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
   doc["imageRendering"] = s.imageRendering;
 
   doc["sideButtonLayout"] = s.sideButtonLayout;
+  doc["frontButtonFollowOrientation"] = s.frontButtonFollowOrientation;
   doc["longPressButtonBehavior"] = s.longPressButtonBehavior;
   doc["longPressChapterSkip"] = s.longPressButtonBehavior == CrossPointSettings::LONG_PRESS_CHAPTER_SKIP;
   doc["shortPwrBtn"] = s.shortPwrBtn;
@@ -799,6 +808,8 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
   doc["flashcardsShortcutOrder"] = s.flashcardsShortcutOrder;
   doc["fileTransferShortcut"] = s.fileTransferShortcut;
   doc["fileTransferShortcutOrder"] = s.fileTransferShortcutOrder;
+  doc["screenCleanShortcut"] = s.screenCleanShortcut;
+  doc["screenCleanShortcutOrder"] = s.screenCleanShortcutOrder;
   doc["sleepShortcut"] = s.sleepShortcut;
   doc["sleepShortcutOrder"] = s.sleepShortcutOrder;
   doc["opdsBrowserShortcut"] = s.opdsBrowserShortcut;
@@ -817,6 +828,7 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
   doc["favoritesShortcutVisible"] = s.favoritesShortcutVisible;
   doc["flashcardsShortcutVisible"] = s.flashcardsShortcutVisible;
   doc["fileTransferShortcutVisible"] = s.fileTransferShortcutVisible;
+  doc["screenCleanShortcutVisible"] = s.screenCleanShortcutVisible;
   doc["sleepShortcutVisible"] = s.sleepShortcutVisible;
   doc["opdsBrowserShortcutVisible"] = s.opdsBrowserShortcutVisible;
 
@@ -1014,6 +1026,10 @@ bool JsonSettingsIO::loadSettings(CrossPointSettings& s, const char* json, bool*
       clamp(doc["fileTransferShortcut"] | s.fileTransferShortcut, shortcutLocationCount, s.fileTransferShortcut);
   s.fileTransferShortcutOrder = clamp(doc["fileTransferShortcutOrder"] | s.fileTransferShortcutOrder,
                                       shortcutOrderCount, s.fileTransferShortcutOrder);
+  s.screenCleanShortcut =
+      clamp(doc["screenCleanShortcut"] | s.screenCleanShortcut, shortcutLocationCount, s.screenCleanShortcut);
+  s.screenCleanShortcutOrder = clamp(doc["screenCleanShortcutOrder"] | s.screenCleanShortcutOrder, shortcutOrderCount,
+                                     s.screenCleanShortcutOrder);
   s.sleepShortcut = clamp(doc["sleepShortcut"] | s.sleepShortcut, shortcutLocationCount, s.sleepShortcut);
   s.sleepShortcutOrder =
       clamp(doc["sleepShortcutOrder"] | s.sleepShortcutOrder, shortcutOrderCount, s.sleepShortcutOrder);
@@ -1064,6 +1080,9 @@ bool JsonSettingsIO::loadSettings(CrossPointSettings& s, const char* json, bool*
   s.fileTransferShortcutVisible =
       clamp(doc["fileTransferShortcutVisible"] | s.fileTransferShortcutVisible, static_cast<uint8_t>(2),
             s.fileTransferShortcutVisible);
+  s.screenCleanShortcutVisible =
+      clamp(doc["screenCleanShortcutVisible"] | s.screenCleanShortcutVisible, static_cast<uint8_t>(2),
+            s.screenCleanShortcutVisible);
   s.sleepShortcutVisible =
       clamp(doc["sleepShortcutVisible"] | s.sleepShortcutVisible, static_cast<uint8_t>(2), s.sleepShortcutVisible);
   s.opdsBrowserShortcutVisible = clamp(doc["opdsBrowserShortcutVisible"] | s.opdsBrowserShortcutVisible,

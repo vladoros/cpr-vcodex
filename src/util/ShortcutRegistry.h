@@ -23,6 +23,7 @@ enum class ShortcutId {
   Favorites,
   Flashcards,
   FileTransfer,
+  ScreenClean,
   Sleep,
   OpdsBrowser,
 };
@@ -37,8 +38,8 @@ struct ShortcutDefinition {
   uint8_t CrossPointSettings::* visiblePtr;
 };
 
-inline const std::array<ShortcutDefinition, 15>& getShortcutDefinitions() {
-  static const std::array<ShortcutDefinition, 15> definitions = {
+inline const std::array<ShortcutDefinition, 16>& getShortcutDefinitions() {
+  static const std::array<ShortcutDefinition, 16> definitions = {
       ShortcutDefinition{ShortcutId::BrowseFiles, StrId::STR_BROWSE_FILES, StrId::STR_NONE_OPT, UIIcon::Folder,
                          &CrossPointSettings::browseFilesShortcut, &CrossPointSettings::browseFilesShortcutOrder,
                          &CrossPointSettings::browseFilesShortcutVisible},
@@ -80,6 +81,10 @@ inline const std::array<ShortcutDefinition, 15>& getShortcutDefinitions() {
       ShortcutDefinition{ShortcutId::FileTransfer, StrId::STR_FILE_TRANSFER, StrId::STR_FILE_TRANSFER_APP_DESC,
                          UIIcon::Transfer, &CrossPointSettings::fileTransferShortcut,
                          &CrossPointSettings::fileTransferShortcutOrder, &CrossPointSettings::fileTransferShortcutVisible},
+      ShortcutDefinition{ShortcutId::ScreenClean, StrId::STR_SCREEN_CLEAN, StrId::STR_SCREEN_CLEAN_APP_DESC,
+                         UIIcon::Image, &CrossPointSettings::screenCleanShortcut,
+                         &CrossPointSettings::screenCleanShortcutOrder,
+                         &CrossPointSettings::screenCleanShortcutVisible},
       ShortcutDefinition{ShortcutId::Sleep, StrId::STR_SLEEP, StrId::STR_SLEEP_APP_DESC, UIIcon::Folder,
                          &CrossPointSettings::sleepShortcut, &CrossPointSettings::sleepShortcutOrder,
                          &CrossPointSettings::sleepShortcutVisible},

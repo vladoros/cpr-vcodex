@@ -13,6 +13,7 @@
 #include "MappedInputManager.h"
 #include "ReadingStatsStore.h"
 #include "SdCardFontGlobals.h"
+#include "SilentRestart.h"
 #include "activities/network/WifiSelectionActivity.h"
 #include "activities/util/ConfirmationActivity.h"
 #include "components/UITheme.h"
@@ -29,6 +30,25 @@ constexpr uint32_t PROGRESS_INPUT_POLL_MS = 150;
 constexpr uint32_t PROGRESS_RENDER_INTERVAL_MS = 1200;
 constexpr size_t PROGRESS_RENDER_STEP_BYTES = 64 * 1024;
 constexpr uint8_t PROGRESS_RENDER_STEP_PERCENT = 5;
+
+struct FontManifestSource {
+  const char* name;
+  const char* description;
+  const char* manifestUrl;
+};
+
+constexpr FontManifestSource FONT_MANIFEST_SOURCES[] = {
+    {"CrossPoint", FONT_RELEASE_REPO_CROSSPOINT, FONT_MANIFEST_URL_FOR_REPO(FONT_RELEASE_REPO_CROSSPOINT)},
+    {"CPR-vCodex", FONT_RELEASE_REPO_VCODEX, FONT_MANIFEST_URL_FOR_REPO(FONT_RELEASE_REPO_VCODEX)},
+};
+constexpr int FONT_MANIFEST_SOURCE_COUNT = sizeof(FONT_MANIFEST_SOURCES) / sizeof(FONT_MANIFEST_SOURCES[0]);
+
+const FontManifestSource& fontManifestSource(const int index) {
+  if (index < 0 || index >= FONT_MANIFEST_SOURCE_COUNT) {
+    return FONT_MANIFEST_SOURCES[0];
+  }
+  return FONT_MANIFEST_SOURCES[index];
+}
 
 HttpDownloader::DownloadError downloadToFileWithRetries(const std::string& url, const char* destPath,
                                                         HttpDownloader::ProgressCallback progress = nullptr) {
@@ -51,7 +71,7 @@ HttpDownloader::DownloadError downloadToFileWithRetries(const std::string& url, 
 
 void FontDownloadActivity::onEnter() {
   Activity::onEnter();
-  readingStatsReleasedForNetwork_ = READING_STATS.releaseMemoryForNetwork();
+  READING_STATS.releaseMemoryForNetwork();
   WiFi.mode(WIFI_STA);
   startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput),
                          [this](const ActivityResult& result) { onWifiSelectionComplete(!result.isCancelled); });
@@ -59,16 +79,13 @@ void FontDownloadActivity::onEnter() {
 
 void FontDownloadActivity::onExit() {
   Activity::onExit();
-  WiFi.setSleep(true);
-  WiFi.disconnect(false);
-  delay(100);
-  WiFi.mode(WIFI_OFF);
-  delay(100);
 
-  if (readingStatsReleasedForNetwork_) {
-    releaseManifestMemory();
-    READING_STATS.reloadAfterNetwork();
-    readingStatsReleasedForNetwork_ = false;
+  releaseManifestMemory();
+
+  if (WiFi.getMode() != WIFI_MODE_NULL) {
+    WiFi.disconnect(false);
+    delay(30);
+    silentRestart();
   }
 }
 
@@ -102,36 +119,49 @@ void FontDownloadActivity::onWifiSelectionComplete(const bool success) {
 
   {
     RenderLock lock(*this);
+    state_ = SOURCE_LIST;
+    selectedSourceIndex_ = sourceIndex_;
+    downloadingFamilyIndex_ = -1;
+  }
+  requestUpdate();
+}
+
+// --- Manifest fetching ---
+
+bool FontDownloadActivity::loadCurrentSourceManifest() {
+  releaseManifestMemory();
+  {
+    RenderLock lock(*this);
     state_ = LOADING_MANIFEST;
     downloadingFamilyIndex_ = -1;
+    errorMessage_.clear();
   }
   requestUpdateAndWait();
 
   if (!fetchAndParseManifest()) {
-    {
-      RenderLock lock(*this);
-      state_ = ERROR;
-    }
-    return;
+    RenderLock lock(*this);
+    state_ = ERROR;
+    return false;
   }
 
   {
     RenderLock lock(*this);
     state_ = FAMILY_LIST;
     selectedIndex_ = 0;
+    downloadingFamilyIndex_ = -1;
   }
+  return true;
 }
-
-// --- Manifest fetching ---
 
 bool FontDownloadActivity::fetchAndParseManifest() {
   // Download manifest to a temp file on SD card to avoid holding both
   // TLS buffers and the full JSON string in RAM simultaneously.
   static constexpr const char* MANIFEST_TMP = "/fonts_manifest.tmp";
 
-  auto result = downloadToFileWithRetries(FONT_MANIFEST_URL, MANIFEST_TMP, nullptr);
+  const auto& source = fontManifestSource(sourceIndex_);
+  auto result = downloadToFileWithRetries(source.manifestUrl, MANIFEST_TMP, nullptr);
   if (result != HttpDownloader::OK) {
-    LOG_ERR("FONT", "Failed to fetch manifest from %s", FONT_MANIFEST_URL);
+    LOG_ERR("FONT", "Failed to fetch manifest from %s", source.manifestUrl);
     errorMessage_ = "Failed to fetch font list";
     Storage.remove(MANIFEST_TMP);
     return false;
@@ -242,7 +272,7 @@ void FontDownloadActivity::downloadAll() {
     RenderLock lock(*this);
     state_ = COMPLETE;
   }
-  renderer.requestNextRefresh(HalDisplay::HALF_REFRESH);
+  renderer.requestNextRefresh(HalDisplay::FULL_REFRESH);
 }
 
 void FontDownloadActivity::updateAll() {
@@ -522,9 +552,49 @@ bool FontDownloadActivity::isSelectedFamilyDeletable() const {
 // --- Input handling ---
 
 void FontDownloadActivity::loop() {
-  if (state_ == FAMILY_LIST) {
+  if (state_ == SOURCE_LIST) {
     if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
       finish();
+      return;
+    }
+
+    const int listSize = FONT_MANIFEST_SOURCE_COUNT;
+    const int pageItems = UITheme::getNumberOfItemsPerPage(renderer, true, false, true, false);
+
+    buttonNavigator_.onNextRelease([this, listSize] {
+      selectedSourceIndex_ = ButtonNavigator::nextIndex(selectedSourceIndex_, listSize);
+      requestUpdate();
+    });
+
+    buttonNavigator_.onPreviousRelease([this, listSize] {
+      selectedSourceIndex_ = ButtonNavigator::previousIndex(selectedSourceIndex_, listSize);
+      requestUpdate();
+    });
+
+    buttonNavigator_.onNextContinuous([this, listSize, pageItems] {
+      selectedSourceIndex_ = ButtonNavigator::nextPageIndex(selectedSourceIndex_, listSize, pageItems);
+      requestUpdate();
+    });
+
+    buttonNavigator_.onPreviousContinuous([this, listSize, pageItems] {
+      selectedSourceIndex_ = ButtonNavigator::previousPageIndex(selectedSourceIndex_, listSize, pageItems);
+      requestUpdate();
+    });
+
+    if (mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
+      sourceIndex_ = selectedSourceIndex_;
+      loadCurrentSourceManifest();
+      requestUpdateAndWait();
+      return;
+    }
+  } else if (state_ == FAMILY_LIST) {
+    if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
+      {
+        RenderLock lock(*this);
+        state_ = SOURCE_LIST;
+        selectedSourceIndex_ = sourceIndex_;
+      }
+      requestUpdate();
       return;
     }
 
@@ -595,7 +665,8 @@ void FontDownloadActivity::loop() {
     if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
       {
         RenderLock lock(*this);
-        state_ = FAMILY_LIST;
+        state_ = families_.empty() ? SOURCE_LIST : FAMILY_LIST;
+        selectedSourceIndex_ = sourceIndex_;
       }
       requestUpdate();
     } else if (mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
@@ -605,27 +676,18 @@ void FontDownloadActivity::loop() {
         return;
       }
 
-      {
-        RenderLock lock(*this);
-        state_ = LOADING_MANIFEST;
-        downloadingFamilyIndex_ = -1;
-      }
-      requestUpdateAndWait();
-
       const bool wifiConnected = WiFi.status() == WL_CONNECTED;
-      if (!wifiConnected || !fetchAndParseManifest()) {
-        RenderLock lock(*this);
-        state_ = ERROR;
-        if (!wifiConnected) {
+      if (!wifiConnected) {
+        {
+          RenderLock lock(*this);
+          state_ = ERROR;
           errorMessage_ = "Wi-Fi not connected";
-        } else if (errorMessage_.empty()) {
-          errorMessage_ = "Failed to fetch font list";
         }
-      } else {
-        RenderLock lock(*this);
-        state_ = FAMILY_LIST;
-        selectedIndex_ = 0;
+        requestUpdateAndWait();
+        return;
       }
+
+      loadCurrentSourceManifest();
       requestUpdateAndWait();
       return;
     }
@@ -653,14 +715,30 @@ void FontDownloadActivity::render(RenderLock&&) {
 
   renderer.clearScreen();
 
-  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_FONT_BROWSER));
+  const char* sourceSubtitle =
+      state_ == SOURCE_LIST || state_ == WIFI_SELECTION ? nullptr : fontManifestSource(sourceIndex_).name;
+  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_FONT_BROWSER),
+                 sourceSubtitle);
 
   const auto lineHeight = renderer.getLineHeight(UI_10_FONT_ID);
   const auto contentTop = metrics.topPadding + metrics.headerHeight + metrics.verticalSpacing;
   const auto centerY = (pageHeight - lineHeight) / 2;
 
-  if (state_ == LOADING_MANIFEST) {
+  if (state_ == SOURCE_LIST) {
+    GUI.drawList(
+        renderer,
+        Rect{0, contentTop, pageWidth, pageHeight - contentTop - metrics.buttonHintsHeight - metrics.verticalSpacing},
+        FONT_MANIFEST_SOURCE_COUNT, selectedSourceIndex_,
+        [](int index) -> std::string { return fontManifestSource(index).name; },
+        [](int index) -> std::string { return fontManifestSource(index).description; }, nullptr,
+        [this](int index) -> std::string { return index == sourceIndex_ ? tr(STR_SELECTED) : ""; }, true);
+
+    const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
+    GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+  } else if (state_ == LOADING_MANIFEST) {
     renderer.drawCenteredText(UI_10_FONT_ID, centerY, tr(STR_LOADING_FONT_LIST));
+    renderer.drawCenteredText(SMALL_FONT_ID, centerY + lineHeight + metrics.verticalSpacing,
+                              fontManifestSource(sourceIndex_).name);
   } else if (state_ == FAMILY_LIST) {
     if (families_.empty()) {
       renderer.drawCenteredText(UI_10_FONT_ID, centerY, tr(STR_NO_FONTS_AVAILABLE));
@@ -740,5 +818,5 @@ void FontDownloadActivity::render(RenderLock&&) {
     GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
   }
 
-  renderer.displayBuffer(state_ == COMPLETE || state_ == ERROR ? HalDisplay::HALF_REFRESH : HalDisplay::FAST_REFRESH);
+  renderer.displayBuffer(state_ == COMPLETE || state_ == ERROR ? HalDisplay::FULL_REFRESH : HalDisplay::FAST_REFRESH);
 }

@@ -1,6 +1,5 @@
 #include "FileBrowserActivity.h"
 
-#include <Epub.h>
 #include <FsHelpers.h>
 #include <GfxRenderer.h>
 #include <HalStorage.h>
@@ -14,6 +13,7 @@
 #include "ReadingStatsStore.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
+#include "util/BookCacheUtils.h"
 
 namespace {
 constexpr unsigned long GO_HOME_MS = 1000;
@@ -158,11 +158,7 @@ void FileBrowserActivity::onExit() {
 }
 
 void FileBrowserActivity::clearFileMetadata(const std::string& fullPath) {
-  // Only clear cache for .epub files
-  if (FsHelpers::hasEpubExtension(fullPath)) {
-    Epub(fullPath, "/.crosspoint").clearCache();
-    LOG_DBG("FileBrowser", "Cleared metadata cache for: %s", fullPath.c_str());
-  }
+  clearBookCache(fullPath);
 }
 
 void FileBrowserActivity::loop() {

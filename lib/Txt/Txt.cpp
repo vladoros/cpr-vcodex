@@ -55,6 +55,21 @@ std::string Txt::getTitle() const {
 
 bool Txt::isMarkdown() const { return FsHelpers::hasMarkdownExtension(filepath); }
 
+bool Txt::clearCache() const {
+  if (!Storage.exists(cachePath.c_str())) {
+    LOG_DBG("TXT", "Cache does not exist, no action needed");
+    return true;
+  }
+
+  if (!Storage.removeDir(cachePath.c_str())) {
+    LOG_ERR("TXT", "Failed to clear cache");
+    return false;
+  }
+
+  LOG_DBG("TXT", "Cache cleared successfully");
+  return true;
+}
+
 void Txt::setupCacheDir() const {
   if (!Storage.exists(cacheBasePath.c_str())) {
     Storage.mkdir(cacheBasePath.c_str());

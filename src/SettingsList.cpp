@@ -85,6 +85,8 @@ const std::vector<SettingInfo>& getSettingsList() {
       // --- Controls ---
       SettingInfo::Enum(StrId::STR_SIDE_BTN_LAYOUT, &CrossPointSettings::sideButtonLayout,
                         {StrId::STR_PREV_NEXT, StrId::STR_NEXT_PREV}, "sideButtonLayout", StrId::STR_CAT_CONTROLS),
+      SettingInfo::Toggle(StrId::STR_FRONT_BTN_FOLLOW_ORIENTATION, &CrossPointSettings::frontButtonFollowOrientation,
+                          "frontButtonFollowOrientation", StrId::STR_CAT_CONTROLS),
       SettingInfo::Enum(StrId::STR_LONG_PRESS_BEHAVIOR, &CrossPointSettings::longPressButtonBehavior,
                         {StrId::STR_LONG_PRESS_BEHAVIOR_OFF, StrId::STR_LONG_PRESS_BEHAVIOR_SKIP,
                          StrId::STR_LONG_PRESS_BEHAVIOR_ORIENTATION},
@@ -171,6 +173,9 @@ const std::vector<SettingInfo>& getSettingsList() {
                         StrId::STR_SHORTCUTS_SECTION),
       SettingInfo::Enum(StrId::STR_FILE_TRANSFER, &CrossPointSettings::fileTransferShortcut,
                         {StrId::STR_HOME_LOCATION, StrId::STR_APPS}, "fileTransferShortcut",
+                        StrId::STR_SHORTCUTS_SECTION),
+      SettingInfo::Enum(StrId::STR_SCREEN_CLEAN, &CrossPointSettings::screenCleanShortcut,
+                        {StrId::STR_HOME_LOCATION, StrId::STR_APPS}, "screenCleanShortcut",
                         StrId::STR_SHORTCUTS_SECTION),
       SettingInfo::Enum(StrId::STR_SLEEP, &CrossPointSettings::sleepShortcut,
                         {StrId::STR_HOME_LOCATION, StrId::STR_APPS}, "sleepShortcut",

@@ -107,10 +107,16 @@ void drawBookRow(GfxRenderer& renderer, const Rect& rect, const ReadingBookStats
 
 void ReadingStatsActivity::onEnter() {
   Activity::onEnter();
+  renderer.requestNextRefresh(HalDisplay::HALF_REFRESH);
   selectedIndex = READING_STATS.getBooks().empty() ? 0 : 1;
   waitForConfirmRelease = mappedInput.isPressed(MappedInputManager::Button::Confirm);
   waitForBackRelease = false;
   requestUpdate();
+}
+
+void ReadingStatsActivity::onExit() {
+  renderer.requestNextRefresh(HalDisplay::HALF_REFRESH);
+  Activity::onExit();
 }
 
 void ReadingStatsActivity::loop() {

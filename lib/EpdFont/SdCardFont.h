@@ -223,6 +223,9 @@ class SdCardFont {
   // Merge sortedNew (sorted by codepoint, no overlap with existing) into the
   // advance table for styleIdx, preserving sort order; cap-truncates the tail.
   void mergeIntoAdvanceTable(uint8_t styleIdx, const AdvanceEntry* sortedNew, uint32_t newCount);
+  int fetchAdvancesForCodepoints(uint32_t* codepoints, uint32_t cpCount, uint8_t styleMask);
+  template <typename Iter>
+  int buildAdvanceTableRange(Iter begin, Iter end, bool includeSpace, bool includeHyphen, uint8_t styleMask);
 
   Stats stats_;
   uint32_t contentHash_ = 0;

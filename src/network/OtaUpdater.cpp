@@ -3,6 +3,7 @@
 #include <HalStorage.h>
 #include <Logging.h>
 #include <ReleaseJsonParser.h>
+#include <algorithm>
 #include <cctype>
 #include <cstring>
 
@@ -147,8 +148,8 @@ OtaUpdater::OtaUpdaterError OtaUpdater::checkForUpdate() {
   esp_http_client_config_t client_config = {
       .url = latestReleaseUrl,
       .event_handler = event_handler,
-      .buffer_size = 8192,
-      .buffer_size_tx = 8192,
+      .buffer_size = 4096,
+      .buffer_size_tx = 1024,
       .user_data = &releaseParser,
       .skip_cert_common_name_check = true,
       .crt_bundle_attach = esp_crt_bundle_attach,
@@ -256,10 +257,20 @@ OtaUpdater::OtaUpdaterError OtaUpdater::installUpdate(ProgressCallback onProgres
 
   LOG_INF("OTA", "Downloading firmware to %s", otaCachePath);
   setProgress(0, otaSize);
+  int lastReportedPercent = -1;
   const auto downloadResult = HttpDownloader::downloadToFile(
       otaUrl, otaCachePath,
-      [this, onProgress, ctx](size_t downloaded, size_t total) {
-        setProgress(downloaded, total > 0 ? total : otaSize);
+      [this, onProgress, ctx, &lastReportedPercent](size_t downloaded, size_t total) {
+        const size_t effectiveTotal = total > 0 ? total : otaSize;
+        setProgress(downloaded, effectiveTotal);
+        if (effectiveTotal > 0) {
+          const int percent =
+              static_cast<int>(std::min<size_t>(100, static_cast<uint64_t>(downloaded) * 100 / effectiveTotal));
+          if (percent == lastReportedPercent) {
+            return;
+          }
+          lastReportedPercent = percent;
+        }
         notifyProgress(onProgress, ctx);
       });
 

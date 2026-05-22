@@ -92,8 +92,14 @@ void FlashcardsAppActivity::openSelectedEntry() {
 
 void FlashcardsAppActivity::onEnter() {
   Activity::onEnter();
+  renderer.requestNextRefresh(HalDisplay::HALF_REFRESH);
   refreshCounts();
   requestUpdate();
+}
+
+void FlashcardsAppActivity::onExit() {
+  renderer.requestNextRefresh(HalDisplay::HALF_REFRESH);
+  Activity::onExit();
 }
 
 void FlashcardsAppActivity::loop() {

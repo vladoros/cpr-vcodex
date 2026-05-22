@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -22,6 +23,11 @@ class HomeActivity final : public Activity {
   bool coverRendered = false;      // Track if cover has been rendered once
   bool coverBufferStored = false;  // Track if cover buffer is stored
   uint8_t* coverBuffer = nullptr;  // HomeActivity's own buffer for cover image
+  size_t coverBufferSize = 0;
+  int coverRectX = 0;
+  int coverRectY = 0;
+  int coverRectW = 0;
+  int coverRectH = 0;
   int lastCarouselBookIndex = 0;
   int residentCarouselFrameIndex = -1;
   int residentCarouselSelectorIndex = -1;

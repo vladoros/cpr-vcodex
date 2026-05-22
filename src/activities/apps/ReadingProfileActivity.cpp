@@ -502,12 +502,18 @@ void ReadingProfileActivity::rebuildProfileCache() {
 
 void ReadingProfileActivity::onEnter() {
   Activity::onEnter();
+  renderer.requestNextRefresh(HalDisplay::HALF_REFRESH);
   scrollOffset = 0;
   maxScrollOffset = 0;
   lastScrollActionMs = 0;
   scrollDirection = 0;
   profileCacheValid = false;
   requestUpdate();
+}
+
+void ReadingProfileActivity::onExit() {
+  renderer.requestNextRefresh(HalDisplay::HALF_REFRESH);
+  Activity::onExit();
 }
 
 void ReadingProfileActivity::loop() {

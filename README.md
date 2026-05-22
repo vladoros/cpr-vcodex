@@ -44,13 +44,13 @@ The philosophy of this fork is simple: keep the firmware fast, stable, and focus
 |---|---|
 | Project | `CPR-vCodex` |
 | Device | `Xteink X4`; `Xteink X3` compatibility reported by users, not personally tested |
-| Current release (CPR-vCodex) build | [`1.3.0.8-cpr-vcodex`](https://github.com/franssjz/cpr-vcodex/releases/tag/1.3.0.8-cpr-vcodex) |
+| Current release (CPR-vCodex) build | [`1.3.0.9-cpr-vcodex`](https://github.com/franssjz/cpr-vcodex/releases/tag/1.3.0.9-cpr-vcodex) |
 | Latest SD font package | [`sd-fonts-m1-b4`](https://github.com/franssjz/cpr-vcodex/releases/tag/sd-fonts-m1-b4) |
 | Changelog | [CHANGELOG.md](./CHANGELOG.md) |
-| Latest release notes | - Merged PR [#62](https://github.com/franssjz/cpr-vcodex/pull/62) to fix a Lyra Carousel ghost-screen case after cancelling the Home delete-from-recents/favorites confirmation.<br>- Invalidates the resident carousel frame marker when returning from that confirmation, so Home no longer trusts a framebuffer that was overwritten by the prompt.<br>- Forces an immediate repaint on the cancel path, restoring the cached carousel frame promptly on e-ink. |
+| Latest release notes | - Manage Fonts now offers the official CrossPoint source for common fonts and CPR-vCodex for vCodex-only additions.<br>- The CPR-vCodex font manifest has been trimmed to vCodex-only `ChareInk`, avoiding duplicate slow downloads.<br>- Added Screen Clean, selected CrossPoint SDK/display/network fixes, denser-screen `HALF_REFRESH` transitions, and better long-text flashcard rendering. |
 | Base firmware line | `CrossPoint Reader 1.3.0` |
-| Latest official commit reviewed | [`0af0ad5`](https://github.com/crosspoint-reader/crosspoint-reader/commit/0af0ad5) |
-| Latest official commit incorporated | Selected 1.3.0 reader, SDK, font-manager, SD-font rendering, hyphenation, and tooling updates through [`0af0ad5`](https://github.com/crosspoint-reader/crosspoint-reader/commit/0af0ad5) |
+| Latest official commit reviewed | [`f39ba70`](https://github.com/crosspoint-reader/crosspoint-reader/commit/f39ba70) |
+| Latest official commit incorporated | Selected 1.3.0 SDK, display, font-manager, network, cache-cleanup, and file-transfer fixes through [`f39ba70`](https://github.com/crosspoint-reader/crosspoint-reader/commit/f39ba70) |
 | Intentional upstream exclusions | Unsupported upstream theme variants such as `RoundedRaff` remain out of the supported vCodex theme list; other upstream UI/config changes are adapted selectively to preserve the existing X4 workflow. |
 
 ## Web tools
@@ -69,9 +69,10 @@ Device download:
 3. Select a family and download it.
 4. Return to `Reader Font Family` and choose the newly installed font.
 
-Manual install from GitHub is faster when Wi-Fi on the device is slow:
+Manual install from GitHub is faster when Wi-Fi on the device is slow. The CPR-vCodex package contains only
+vCodex-only additions; use the CrossPoint source/package for common families:
 
-1. Download [`all-fonts.zip`](https://github.com/franssjz/cpr-vcodex/releases/download/sd-fonts-m1-b4/all-fonts.zip) from the latest SD font package.
+1. Download [`all-fonts.zip`](https://github.com/franssjz/cpr-vcodex/releases/download/sd-fonts-m1-b4/all-fonts.zip) from the latest CPR-vCodex SD font package.
 2. Extract it into the root of the microSD card. The archive creates `fonts/<Family>/*.cpfont`.
 3. Reinsert the card, restart the device, and select the font under `Settings > Reader > Font Family`.
 
@@ -133,7 +134,7 @@ This project is **not affiliated with Xteink**.
 - `Sync Day` for coherent day-based stats on hardware without a trustworthy sleep RTC
 - `Lyra Carousel` Home theme, originally created by [zgredex](https://github.com/zgredex), adapted to this fork by [erickosanchezj](https://github.com/erickosanchezj), and limited to 3 books for smoother X4 navigation
 - experimental X3-only `Tilt Page Turn`, hidden unless the QMI8658 IMU is detected and disabled by default
-- downloadable SD-card font families, published from this fork and including `ChareInk`
+- downloadable SD-card fonts from CrossPoint plus vCodex-only families such as `ChareInk`
 - SD-card firmware update from Settings for local `.bin` flashing without a browser
 - configurable long-press side-button behavior: `Off`, `Chapter skip`, or `Orientation change`
 - EPUB bookmarks plus a global bookmarks app
@@ -454,7 +455,7 @@ Font notes:
 - `Bookerly` and `Noto Sans` have full regular/bold/italic coverage in the compiled sizes
 - `Lexend` is available as an extra reader family
 - `Lexend` italic and bold-italic still use safe fallbacks rather than separate real italic assets
-- `Manage Fonts` downloads extra SD-card font families from CPR-vCodex release assets, including `ChareInk`, `Literata`, and other prebuilt `.cpfont` packages
+- `Manage Fonts` downloads common SD-card font families from CrossPoint and vCodex-only additions from CPR-vCodex release assets, currently `ChareInk`
 
 ## What requires Sync Day
 
@@ -499,7 +500,7 @@ Each packaged dev build now keeps the base firmware line and the local flash ide
 Practical values to look at:
 
 - base firmware line: `CrossPoint Reader 1.3.0`
-- current release build style: `1.3.0.8-cpr-vcodex`
+- current release build style: `1.3.0.9-cpr-vcodex`
 - packaged artifact style: `artifacts/<version>-cpr-vcodex.bin`
 
 The incremental `.bNNNN` suffix exists specifically to help distinguish newer flashes from older ones on real hardware.
@@ -569,10 +570,10 @@ Release publishing:
 - before tagging, run:
 
 ```powershell
-python scripts/pre_release_check.py --tag 1.3.0.8-cpr-vcodex
+python scripts/pre_release_check.py --tag 1.3.0.9-cpr-vcodex
 ```
 
-- push a stable tag named like `1.3.0.8-cpr-vcodex`
+- push a stable tag named like `1.3.0.9-cpr-vcodex`
 - the release workflow builds `gh_release`, validates that the packaged artifact
   name matches the tag, and attaches only the flashable `<tag>.bin` to the GitHub Release
 - tagged CI release builds derive the firmware release number from the tag, not

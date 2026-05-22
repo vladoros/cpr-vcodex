@@ -138,6 +138,12 @@ MappedInputManager::Labels MappedInputManager::mapLabels(const char* back, const
   sanitized[2] = previous ? previous : "";
   sanitized[3] = next ? next : "";
 
+  const bool swapLabels =
+      SETTINGS.frontButtonFollowOrientation && (SETTINGS.orientation == CrossPointSettings::INVERTED ||
+                                                SETTINGS.orientation == CrossPointSettings::LANDSCAPE_CCW);
+  const char* leftLabel = swapLabels ? sanitized[3].c_str() : sanitized[2].c_str();
+  const char* rightLabel = swapLabels ? sanitized[2].c_str() : sanitized[3].c_str();
+
   auto labelForHardware = [&](uint8_t hw) -> const char* {
     if (hw == SETTINGS.frontButtonBack) {
       return sanitized[0].c_str();
@@ -146,10 +152,10 @@ MappedInputManager::Labels MappedInputManager::mapLabels(const char* back, const
       return sanitized[1].c_str();
     }
     if (hw == SETTINGS.frontButtonLeft) {
-      return sanitized[2].c_str();
+      return leftLabel;
     }
     if (hw == SETTINGS.frontButtonRight) {
-      return sanitized[3].c_str();
+      return rightLabel;
     }
     return "";
   };

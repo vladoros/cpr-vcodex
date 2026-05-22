@@ -28,6 +28,7 @@
 #include "ReadingStatsStore.h"
 #include "RecentBooksStore.h"
 #include "SdCardFontGlobals.h"
+#include "SilentRestart.h"
 #include "UiFontSelection.h"
 #include "activities/Activity.h"
 #include "activities/ActivityManager.h"
@@ -188,6 +189,37 @@ void useLanguageSelectionUiFonts() { applyUiFontsForLanguage(Language::VI); }
 unsigned long t1 = 0;
 unsigned long t2 = 0;
 
+// Definitions for SilentRestart.h. RTC_NOINIT survives ESP.restart() but not power loss.
+RTC_NOINIT_ATTR uint32_t silentRebootMagic;
+RTC_NOINIT_ATTR uint32_t silentRebootTarget;
+constexpr uint32_t SILENT_REBOOT_MAGIC = 0xC1EAB007;
+constexpr uint32_t SILENT_REBOOT_TARGET_HOME = 0;
+constexpr uint32_t SILENT_REBOOT_TARGET_READER = 1;
+
+// Latched once deep sleep is committed. WiFi activities also restart silently
+// from onExit(), but deep sleep already gives us a clean heap on wake.
+static bool deepSleepInProgress = false;
+
+void silentRestart() {
+  if (deepSleepInProgress) return;
+  silentRebootTarget = SILENT_REBOOT_TARGET_HOME;
+  silentRebootMagic = SILENT_REBOOT_MAGIC;
+  LOG_DBG("MAIN", "Silent restart (target=home)");
+  GUI.drawPopup(renderer, tr(STR_LOADING_POPUP));
+  delay(50);
+  ESP.restart();
+}
+
+void silentRestartToReader() {
+  if (deepSleepInProgress) return;
+  silentRebootTarget = SILENT_REBOOT_TARGET_READER;
+  silentRebootMagic = SILENT_REBOOT_MAGIC;
+  LOG_DBG("MAIN", "Silent restart (target=reader)");
+  GUI.drawPopup(renderer, tr(STR_LOADING_POPUP));
+  delay(50);
+  ESP.restart();
+}
+
 // Verify power button press duration on wake-up from deep sleep
 // Pre-condition: isWakeupByPowerButton() == true
 void verifyPowerButtonDuration() {
@@ -245,7 +277,13 @@ void enterDeepSleep() {
   APP_STATE.lastSleepFromReader = activityManager.isReaderActivity();
   APP_STATE.saveToFile();
 
+  deepSleepInProgress = true;
   activityManager.goToSleep();
+
+  if (WiFi.getMode() != WIFI_MODE_NULL) {
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+  }
 
   halTiltSensor.deepSleep();
   display.deepSleep();
@@ -260,8 +298,8 @@ void ensureSdFontLoaded() {
   }
 }
 
-void setupDisplayAndFonts() {
-  display.begin();
+void setupDisplayAndFonts(bool seamless = false) {
+  display.begin(seamless);
   renderer.begin();
   renderer.setDarkMode(SETTINGS.darkMode);
   activityManager.begin();
@@ -303,6 +341,13 @@ void setup() {
   t1 = millis();
 
   HalSystem::begin();
+
+  const bool isSilentReboot = (silentRebootMagic == SILENT_REBOOT_MAGIC);
+  const uint32_t snapshotTarget =
+      (isSilentReboot && silentRebootTarget <= SILENT_REBOOT_TARGET_READER) ? silentRebootTarget : 0;
+  silentRebootMagic = 0;
+  silentRebootTarget = 0;
+
   gpio.begin();
   powerManager.begin();
   halTiltSensor.begin();
@@ -329,7 +374,7 @@ void setup() {
   // We need 6 open files concurrently when parsing a new chapter
   if (!Storage.begin()) {
     LOG_ERR("MAIN", "SD card initialization failed");
-    setupDisplayAndFonts();
+    setupDisplayAndFonts(isSilentReboot);
     activityManager.goToFullScreenMessage("SD card error", EpdFontFamily::BOLD);
     return;
   }
@@ -400,9 +445,11 @@ void setup() {
   }
 
   BootRecovery::enterStage(BootRecovery::BootStage::DisplayAndFonts);
-  setupDisplayAndFonts();
+  setupDisplayAndFonts(isSilentReboot);
 
-  activityManager.goToBoot();
+  if (!isSilentReboot) {
+    activityManager.goToBoot();
+  }
 
   const bool skipStateLoad = manualSafeBoot || BootRecovery::shouldSkipState();
   const bool skipReadingStatsLoad = manualSafeBoot || BootRecovery::shouldSkipReadingStats();
@@ -454,7 +501,8 @@ void setup() {
     ACHIEVEMENTS.loadFromFile();
   }
 
-  const bool countUsefulStart = !forceHomeBoot && wakeupReason != HalGPIO::WakeupReason::AfterUSBPower &&
+  const bool countUsefulStart = !isSilentReboot && !forceHomeBoot &&
+                                wakeupReason != HalGPIO::WakeupReason::AfterUSBPower &&
                                 wakeupReason != HalGPIO::WakeupReason::AfterFlash;
   const uint8_t syncDayReminderThreshold = SETTINGS.getSyncDayReminderStartThreshold();
   BootRecovery::enterStage(BootRecovery::BootStage::RouteDecision);
@@ -462,6 +510,10 @@ void setup() {
   if (HalSystem::isRebootFromPanic() && !forceHomeBoot) {
     // If we rebooted from a panic, go to crash report screen to show the panic info
     activityManager.goToCrashReport();
+  } else if (isSilentReboot && snapshotTarget == SILENT_REBOOT_TARGET_READER && !APP_STATE.openEpubPath.empty()) {
+    activityManager.goToReader(APP_STATE.openEpubPath);
+  } else if (isSilentReboot) {
+    activityManager.goHome();
   } else {
     const bool bootToHome = forceHomeBoot || APP_STATE.openEpubPath.empty() || !APP_STATE.lastSleepFromReader ||
                             mappedInputManager.isPressed(MappedInputManager::Button::Back) ||
@@ -487,6 +539,13 @@ void setup() {
   }
 
   BootRecovery::markBootCompleted();
+
+  if (isSilentReboot) {
+    activityManager.requestUpdateAndWait();
+    gpio.update();
+    delay(10);
+    gpio.update();
+  }
 
   // Ensure we're not still holding the power button before leaving setup
   waitForPowerRelease();

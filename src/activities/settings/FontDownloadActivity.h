@@ -14,19 +14,18 @@
 // support a new manifest schema.
 #define FONTS_MANIFEST_VERSION 1
 
-#ifndef FONT_RELEASE_REPO
-#define FONT_RELEASE_REPO "franssjz/cpr-vcodex"
-#endif
+#define FONT_RELEASE_REPO_CROSSPOINT "crosspoint-reader/crosspoint-fonts"
+#define FONT_RELEASE_REPO_VCODEX "franssjz/cpr-vcodex"
 
-#ifndef FONT_MANIFEST_URL
+#ifndef FONT_MANIFEST_URL_FOR_REPO
 // Manifest + .cpfont assets are published by .github/workflows/release-fonts.yml
-// to this fork under the "sd-fonts-m<META>-b<BIN>" tag. The tag pattern must
-// stay in sync with the workflow; it derives its version numbers from
+// to release repos under the "sd-fonts-m<META>-b<BIN>" tag. The tag pattern
+// must stay in sync with the workflow; it derives its version numbers from
 // lib/EpdFont/scripts/cpfont_version.py.
 #define FONT_MANIFEST_URL_STRINGIFY_INNER(x) #x
 #define FONT_MANIFEST_URL_STRINGIFY(x) FONT_MANIFEST_URL_STRINGIFY_INNER(x)
-#define FONT_MANIFEST_URL                                                                                         \
-  "https://github.com/" FONT_RELEASE_REPO "/releases/download/sd-fonts-m" FONT_MANIFEST_URL_STRINGIFY(            \
+#define FONT_MANIFEST_URL_FOR_REPO(repo)                                                                          \
+  "https://github.com/" repo "/releases/download/sd-fonts-m" FONT_MANIFEST_URL_STRINGIFY(                         \
       FONTS_MANIFEST_VERSION) "-b" FONT_MANIFEST_URL_STRINGIFY(CPFONT_VERSION) "/fonts.json"
 #endif
 
@@ -39,13 +38,15 @@ class FontDownloadActivity : public Activity {
   void loop() override;
   void render(RenderLock&&) override;
   bool preventAutoSleep() override {
-    return state_ == LOADING_MANIFEST || state_ == DOWNLOADING || state_ == COMPLETE || state_ == ERROR;
+    return state_ == SOURCE_LIST || state_ == LOADING_MANIFEST || state_ == DOWNLOADING || state_ == COMPLETE ||
+           state_ == ERROR;
   }
   bool skipLoopDelay() override { return true; }
 
  private:
   enum State {
     WIFI_SELECTION,
+    SOURCE_LIST,
     LOADING_MANIFEST,
     FAMILY_LIST,
     DOWNLOADING,
@@ -76,6 +77,8 @@ class FontDownloadActivity : public Activity {
   // Manifest data
   std::string baseUrl_;
   std::vector<ManifestFamily> families_;
+  int sourceIndex_ = 0;
+  int selectedSourceIndex_ = 0;
   int selectedIndex_ = 0;
 
   // Download progress
@@ -86,9 +89,9 @@ class FontDownloadActivity : public Activity {
   int downloadingFamilyIndex_ = -1;
   std::string errorMessage_;
   bool cancelRequested_ = false;
-  bool readingStatsReleasedForNetwork_ = false;
 
   void onWifiSelectionComplete(bool success);
+  bool loadCurrentSourceManifest();
   bool fetchAndParseManifest();
   void downloadFamily(ManifestFamily& family);
   void downloadAll();

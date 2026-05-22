@@ -41,6 +41,7 @@
 #include "activities/apps/ReadingHeatmapActivity.h"
 #include "activities/apps/ReadingProfileActivity.h"
 #include "activities/apps/ReadingStatsActivity.h"
+#include "activities/apps/ScreenCleanActivity.h"
 #include "activities/apps/SleepAppActivity.h"
 #include "activities/apps/SyncDayActivity.h"
 #include "activities/network/WifiSelectionActivity.h"
@@ -126,6 +127,8 @@ const std::vector<SettingInfo>& getDeviceControlsSettings() {
         SettingInfo::Action(StrId::STR_REMAP_FRONT_BUTTONS, SettingAction::RemapFrontButtons),
         SettingInfo::Enum(StrId::STR_SIDE_BTN_LAYOUT, &CrossPointSettings::sideButtonLayout,
                           {StrId::STR_PREV_NEXT, StrId::STR_NEXT_PREV}),
+        SettingInfo::Toggle(StrId::STR_FRONT_BTN_FOLLOW_ORIENTATION,
+                            &CrossPointSettings::frontButtonFollowOrientation),
         SettingInfo::Enum(StrId::STR_LONG_PRESS_BEHAVIOR, &CrossPointSettings::longPressButtonBehavior,
                           {StrId::STR_LONG_PRESS_BEHAVIOR_OFF, StrId::STR_LONG_PRESS_BEHAVIOR_SKIP,
                            StrId::STR_LONG_PRESS_BEHAVIOR_ORIENTATION}),
@@ -213,6 +216,7 @@ const std::vector<SettingInfo>& getDeviceOnlyAppSettings() {
       SettingInfo::Section(StrId::STR_APPS),
       SettingInfo::Action(StrId::STR_BOOKMARKS, SettingAction::Bookmarks),
       SettingInfo::Action(StrId::STR_FAVORITES, SettingAction::Favorites),
+      SettingInfo::Action(StrId::STR_SCREEN_CLEAN, SettingAction::ScreenClean),
       SettingInfo::Action(StrId::STR_SLEEP, SettingAction::SleepApp),
       SettingInfo::Action(StrId::STR_IF_FOUND_RETURN_ME, SettingAction::IfFound),
       SettingInfo::Section(StrId::STR_FLASHCARDS),
@@ -360,6 +364,10 @@ std::string getSettingValueText(const SettingInfo& setting) {
       }
       case SettingAction::Flashcards: {
         const auto* definition = findShortcutDefinition(ShortcutId::Flashcards);
+        return definition ? ShortcutUiMetadata::getSubtitle(*definition) : "";
+      }
+      case SettingAction::ScreenClean: {
+        const auto* definition = findShortcutDefinition(ShortcutId::ScreenClean);
         return definition ? ShortcutUiMetadata::getSubtitle(*definition) : "";
       }
       case SettingAction::SleepApp: {
@@ -755,6 +763,9 @@ void SettingsActivity::toggleCurrentSetting() {
         break;
       case SettingAction::Flashcards:
         startActivityForResult(std::make_unique<FlashcardsAppActivity>(renderer, mappedInput), resultHandler);
+        break;
+      case SettingAction::ScreenClean:
+        startActivityForResult(std::make_unique<ScreenCleanActivity>(renderer, mappedInput), resultHandler);
         break;
       case SettingAction::SleepApp:
         startActivityForResult(std::make_unique<SleepAppActivity>(renderer, mappedInput), resultHandler);

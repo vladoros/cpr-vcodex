@@ -6,11 +6,19 @@
 
 #include <algorithm>
 
+#include "CrossPointSettings.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 #include "util/HeaderDateUtils.h"
 
 namespace {
+struct WrappedCardBody {
+  int fontId = UI_10_FONT_ID;
+  int lineHeight = 0;
+  std::vector<std::string> lines;
+  bool fits = true;
+};
+
 bool hasValue(const std::vector<std::string>& values, const std::string& key) {
   return std::find(values.begin(), values.end(), key) != values.end();
 }
@@ -67,6 +75,95 @@ std::vector<std::string> wrapCardBody(GfxRenderer& renderer, const int fontId, c
   }
 
   return result;
+}
+
+int builtInReaderFontId(uint8_t family, uint8_t size) {
+  switch (family) {
+    case CrossPointSettings::NOTOSANS:
+      switch (size) {
+        case CrossPointSettings::X_SMALL:
+          return NOTOSANS_10_FONT_ID;
+        case CrossPointSettings::SMALL:
+          return NOTOSANS_12_FONT_ID;
+        case CrossPointSettings::LARGE:
+          return NOTOSANS_16_FONT_ID;
+        case CrossPointSettings::EXTRA_LARGE:
+          return NOTOSANS_18_FONT_ID;
+        case CrossPointSettings::MEDIUM:
+        default:
+          return NOTOSANS_14_FONT_ID;
+      }
+    case CrossPointSettings::LEXEND:
+      switch (size) {
+        case CrossPointSettings::X_SMALL:
+          return LEXEND_10_FONT_ID;
+        case CrossPointSettings::SMALL:
+          return LEXEND_12_FONT_ID;
+        case CrossPointSettings::LARGE:
+          return LEXEND_16_FONT_ID;
+        case CrossPointSettings::EXTRA_LARGE:
+          return LEXEND_18_FONT_ID;
+        case CrossPointSettings::MEDIUM:
+        default:
+          return LEXEND_14_FONT_ID;
+      }
+    case CrossPointSettings::BOOKERLY:
+    default:
+      switch (size) {
+        case CrossPointSettings::X_SMALL:
+          return BOOKERLY_10_FONT_ID;
+        case CrossPointSettings::SMALL:
+          return BOOKERLY_12_FONT_ID;
+        case CrossPointSettings::LARGE:
+          return BOOKERLY_16_FONT_ID;
+        case CrossPointSettings::EXTRA_LARGE:
+          return BOOKERLY_18_FONT_ID;
+        case CrossPointSettings::MEDIUM:
+        default:
+          return BOOKERLY_14_FONT_ID;
+      }
+  }
+}
+
+std::vector<int> flashcardFontCandidates(int preferredFontId) {
+  std::vector<int> candidates;
+  const auto addUnique = [&candidates](const int fontId) {
+    if (fontId != 0 && std::find(candidates.begin(), candidates.end(), fontId) == candidates.end()) {
+      candidates.push_back(fontId);
+    }
+  };
+
+  addUnique(preferredFontId);
+  const int startSize = std::clamp<int>(SETTINGS.fontSize, CrossPointSettings::X_SMALL, CrossPointSettings::EXTRA_LARGE);
+  for (int size = startSize; size >= CrossPointSettings::X_SMALL; --size) {
+    addUnique(builtInReaderFontId(SETTINGS.fontFamily, static_cast<uint8_t>(size)));
+  }
+  addUnique(UI_12_FONT_ID);
+  addUnique(UI_10_FONT_ID);
+  addUnique(SMALL_FONT_ID);
+  return candidates;
+}
+
+WrappedCardBody fitCardBody(GfxRenderer& renderer, const int preferredFontId, const std::string& text, const int width,
+                            const int height, const EpdFontFamily::Style style) {
+  WrappedCardBody fallback;
+
+  for (const int fontId : flashcardFontCandidates(preferredFontId)) {
+    const int lineHeight = std::max(1, renderer.getLineHeight(fontId));
+    const int maxLines = std::max(1, height / lineHeight);
+    auto lines = wrapCardBody(renderer, fontId, text, width, maxLines + 1, style);
+    const bool fits = static_cast<int>(lines.size()) <= maxLines;
+    if (!fits && static_cast<int>(lines.size()) > maxLines) {
+      lines.resize(maxLines);
+    }
+
+    fallback = WrappedCardBody{fontId, lineHeight, std::move(lines), fits};
+    if (fits) {
+      return fallback;
+    }
+  }
+
+  return fallback;
 }
 }  // namespace
 
@@ -306,21 +403,19 @@ void FlashcardReviewActivity::render(RenderLock&&) {
 
   renderer.drawRect(cardX, cardY, cardWidth, cardHeight);
 
-  const std::string sideLabel = showBack ? "BACK" : "FRONT";
+  const std::string sideLabel = showBack ? tr(STR_CARD_BACK) : tr(STR_CARD_FRONT);
   renderer.drawText(SMALL_FONT_ID, cardX + 10, cardY + 10, sideLabel.c_str(), true, EpdFontFamily::BOLD);
 
   const std::string bodyText = showBack ? currentCard().back : currentCard().front;
   const int textWidth = cardWidth - 24;
   const int textTop = cardY + 34;
   const int textHeight = cardHeight - 50;
-  const int lineHeight = renderer.getLineHeight(readerFontId);
-  const int maxLines = std::max(3, textHeight / std::max(1, lineHeight));
   const EpdFontFamily::Style bodyStyle = showBack ? EpdFontFamily::BOLD : EpdFontFamily::REGULAR;
-  const auto lines = wrapCardBody(renderer, readerFontId, bodyText, textWidth, maxLines, bodyStyle);
-  int textY = textTop + std::max(0, (textHeight - static_cast<int>(lines.size()) * lineHeight) / 2);
-  for (const auto& line : lines) {
-    renderer.drawText(readerFontId, cardX + 12, textY, line.c_str(), true, bodyStyle);
-    textY += lineHeight;
+  const auto fitted = fitCardBody(renderer, readerFontId, bodyText, textWidth, textHeight, bodyStyle);
+  int textY = textTop + std::max(0, (textHeight - static_cast<int>(fitted.lines.size()) * fitted.lineHeight) / 2);
+  for (const auto& line : fitted.lines) {
+    renderer.drawText(fitted.fontId, cardX + 12, textY, line.c_str(), true, bodyStyle);
+    textY += fitted.lineHeight;
   }
 
   const auto labels = mappedInput.mapLabels(tr(STR_FLIP), tr(STR_NEXT), tr(STR_SUCCESS), tr(STR_FAIL));

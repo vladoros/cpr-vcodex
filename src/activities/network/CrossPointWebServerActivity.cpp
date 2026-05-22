@@ -11,6 +11,7 @@
 
 #include "MappedInputManager.h"
 #include "NetworkModeSelectionActivity.h"
+#include "SilentRestart.h"
 #include "WifiSelectionActivity.h"
 #include "activities/network/CalibreConnectActivity.h"
 #include "components/UITheme.h"
@@ -93,22 +94,17 @@ void CrossPointWebServerActivity::onExit() {
     dnsServer = nullptr;
   }
 
-  // Brief wait for LWIP stack to flush pending packets
-  delay(50);
-
-  // Disconnect WiFi gracefully
-  if (isApMode) {
-    LOG_DBG("WEBACT", "Stopping WiFi AP...");
-    WiFi.softAPdisconnect(true);
-  } else {
-    LOG_DBG("WEBACT", "Disconnecting WiFi (graceful)...");
-    WiFi.disconnect(false);  // false = don't erase credentials, send disconnect frame
+  if (WiFi.getMode() != WIFI_MODE_NULL) {
+    if (isApMode) {
+      LOG_DBG("WEBACT", "Stopping WiFi AP...");
+      WiFi.softAPdisconnect(true);
+    } else {
+      LOG_DBG("WEBACT", "Disconnecting WiFi (graceful)...");
+      WiFi.disconnect(false);
+    }
+    delay(30);
+    silentRestart();
   }
-  delay(30);  // Allow disconnect frame to be sent
-
-  LOG_DBG("WEBACT", "Setting WiFi mode OFF...");
-  WiFi.mode(WIFI_OFF);
-  delay(30);  // Allow WiFi hardware to power down
 
   LOG_DBG("WEBACT", "Free heap at onExit end: %d bytes", ESP.getFreeHeap());
 }

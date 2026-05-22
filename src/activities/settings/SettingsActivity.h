@@ -42,6 +42,7 @@ enum class SettingAction {
   Bookmarks,
   Favorites,
   Flashcards,
+  ScreenClean,
   SleepApp,
   IfFound,
   DownloadFonts,

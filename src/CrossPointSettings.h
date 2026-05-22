@@ -263,6 +263,7 @@ class CrossPointSettings {
   // Button layouts (front layout retained for migration only)
   uint8_t frontButtonLayout = BACK_CONFIRM_LEFT_RIGHT;
   uint8_t sideButtonLayout = PREV_NEXT;
+  uint8_t frontButtonFollowOrientation = 0;
   // Front button remap (logical -> hardware)
   // Used by MappedInputManager to translate logical buttons into physical front buttons.
   uint8_t frontButtonBack = FRONT_HW_BACK;
@@ -351,10 +352,12 @@ class CrossPointSettings {
   uint8_t flashcardsShortcutOrder = 14;
   uint8_t fileTransferShortcut = SHORTCUT_APPS;
   uint8_t fileTransferShortcutOrder = 15;
+  uint8_t screenCleanShortcut = SHORTCUT_APPS;
+  uint8_t screenCleanShortcutOrder = 16;
   uint8_t sleepShortcut = SHORTCUT_APPS;
-  uint8_t sleepShortcutOrder = 16;
+  uint8_t sleepShortcutOrder = 17;
   uint8_t opdsBrowserShortcut = SHORTCUT_HOME;
-  uint8_t opdsBrowserShortcutOrder = 17;
+  uint8_t opdsBrowserShortcutOrder = 18;
   uint8_t browseFilesShortcutVisible = 1;
   // Legacy Stats shortcut visibility retained for settings.json migration to readingStatsShortcut.
   uint8_t statsShortcutVisible = 1;
@@ -371,6 +374,7 @@ class CrossPointSettings {
   uint8_t favoritesShortcutVisible = 1;
   uint8_t flashcardsShortcutVisible = 1;
   uint8_t fileTransferShortcutVisible = 1;
+  uint8_t screenCleanShortcutVisible = 1;
   uint8_t sleepShortcutVisible = 1;
   uint8_t opdsBrowserShortcutVisible = 1;
   // Sunlight fading compensation

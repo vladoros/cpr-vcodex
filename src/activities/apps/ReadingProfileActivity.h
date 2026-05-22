@@ -68,6 +68,7 @@ class ReadingProfileActivity final : public Activity {
       : Activity("ReadingProfile", renderer, mappedInput) {}
 
   void onEnter() override;
+  void onExit() override;
   void loop() override;
   void render(RenderLock&&) override;
   uint8_t getUiTransitionRefreshWeight() const override { return UI_TRANSITION_REFRESH_WEIGHT_DENSE; }
