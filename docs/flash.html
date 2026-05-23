@@ -867,8 +867,25 @@ pio run -e gh_release -t upload</code></pre>
         });
 
         await runStep("reset", async () => {
-          await disconnectLoader(loader, false);
+          // esptool-js 0.5.7's usbJTAGSerialReset.reset() is broken for native USB
+          // (pid 0x1001): its entire body is `wait 200ms → setRTS(false) → wait 200ms`.
+          // Since RTS is already false after the bootloader-entry sequence, this is a
+          // no-op and the device never resets. Bypass loader.after() and implement
+          // esptool.py's hard_reset() directly: setRTS(true) → 100ms → setRTS(false).
+          if (currentTransport) {
+            try {
+              await currentTransport.setDTR(false); // IO0 high → normal boot (not download mode)
+              await currentTransport.setRTS(true);  // EN low → assert reset
+              await new Promise(r => setTimeout(r, 100));
+              await currentTransport.setRTS(false); // EN high → release, device boots
+              await new Promise(r => setTimeout(r, 400));
+            } catch (_) {}
+          }
           loader = null;
+          if (currentTransport) {
+            try { await currentTransport.disconnect(); } catch (_) {}
+            currentTransport = null;
+          }
         });
 
         setStatus(siteT("flashComplete"), "success");
