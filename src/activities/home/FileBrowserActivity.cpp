@@ -95,9 +95,11 @@ void FileBrowserActivity::loadFiles() {
       files.emplace_back(std::string(name) + "/");
     } else {
       std::string_view filename{name};
-      if (FsHelpers::hasEpubExtension(filename) || FsHelpers::hasXtcExtension(filename) ||
-          FsHelpers::hasTxtExtension(filename) || FsHelpers::hasMarkdownExtension(filename) ||
-          FsHelpers::hasBmpExtension(filename)) {
+      if ((mode == Mode::PickFirmware && FsHelpers::checkFileExtension(filename, ".bin")) ||
+          (mode == Mode::Books &&
+           (FsHelpers::hasEpubExtension(filename) || FsHelpers::hasXtcExtension(filename) ||
+            FsHelpers::hasTxtExtension(filename) || FsHelpers::hasMarkdownExtension(filename) ||
+            FsHelpers::hasBmpExtension(filename)))) {
         files.emplace_back(filename);
       }
     }
