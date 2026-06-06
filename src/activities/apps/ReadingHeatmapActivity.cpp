@@ -314,6 +314,11 @@ void ReadingHeatmapActivity::onEnter() {
   requestUpdate();
 }
 
+void ReadingHeatmapActivity::onExit() {
+  renderer.requestNextRefresh(HalDisplay::HALF_REFRESH);
+  Activity::onExit();
+}
+
 void ReadingHeatmapActivity::goToAdjacentMonth(const int delta) {
   int currentYear = 0;
   unsigned currentMonth = 0;

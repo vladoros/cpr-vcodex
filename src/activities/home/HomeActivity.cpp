@@ -791,6 +791,13 @@ void HomeActivity::invalidateCarouselFrameHash() {
   cachedCarouselFrameHashValid = false;
 }
 
+void HomeActivity::requestFreshHomeRender(const bool immediate) {
+  if (isLyraCarouselTheme()) {
+    invalidateResidentCarouselFrame();
+  }
+  requestUpdate(immediate);
+}
+
 uint32_t HomeActivity::getCachedCarouselFrameHash(const int bookIndex) {
   if (recentBooks.empty()) {
     return 0;
@@ -991,45 +998,45 @@ void HomeActivity::loop() {
           break;
         case ShortcutId::ReadingHeatmap:
           startActivityForResult(std::make_unique<ReadingHeatmapActivity>(renderer, mappedInput),
-                                 [this](const ActivityResult&) { requestUpdate(); });
+                                 [this](const ActivityResult&) { requestFreshHomeRender(true); });
           break;
         case ShortcutId::ReadingProfile:
           startActivityForResult(std::make_unique<ReadingProfileActivity>(renderer, mappedInput),
-                                 [this](const ActivityResult&) { requestUpdate(); });
+                                 [this](const ActivityResult&) { requestFreshHomeRender(true); });
           break;
         case ShortcutId::Achievements:
           startActivityForResult(std::make_unique<AchievementsActivity>(renderer, mappedInput),
-                                 [this](const ActivityResult&) { requestUpdate(); });
+                                 [this](const ActivityResult&) { requestFreshHomeRender(true); });
           break;
         case ShortcutId::IfFound:
           startActivityForResult(std::make_unique<IfFoundActivity>(renderer, mappedInput),
-                                 [this](const ActivityResult&) { requestUpdate(); });
+                                 [this](const ActivityResult&) { requestFreshHomeRender(true); });
           break;
         case ShortcutId::RecentBooks:
           activityManager.goToRecentBooks();
           break;
         case ShortcutId::Bookmarks:
           startActivityForResult(std::make_unique<BookmarksAppActivity>(renderer, mappedInput),
-                                 [this](const ActivityResult&) { requestUpdate(); });
+                                 [this](const ActivityResult&) { requestFreshHomeRender(true); });
           break;
         case ShortcutId::Favorites:
           startActivityForResult(std::make_unique<FavoritesAppActivity>(renderer, mappedInput),
                                  [this](const ActivityResult&) {
                                    const auto& metrics = UITheme::getInstance().getMetrics();
                                    reloadHomeBooks(metrics.homeRecentBooksCount);
-                                   requestUpdate();
+                                   requestFreshHomeRender(true);
                                  });
           break;
         case ShortcutId::Flashcards:
           startActivityForResult(std::make_unique<FlashcardsAppActivity>(renderer, mappedInput),
-                                 [this](const ActivityResult&) { requestUpdate(); });
+                                 [this](const ActivityResult&) { requestFreshHomeRender(true); });
           break;
         case ShortcutId::FileTransfer:
           activityManager.goToFileTransfer();
           break;
         case ShortcutId::Sleep:
           startActivityForResult(std::make_unique<SleepAppActivity>(renderer, mappedInput),
-                                 [this](const ActivityResult&) { requestUpdate(); });
+                                 [this](const ActivityResult&) { requestFreshHomeRender(true); });
           break;
         case ShortcutId::OpdsBrowser:
           onOpdsBrowserOpen();

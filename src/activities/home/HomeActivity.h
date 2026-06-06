@@ -56,6 +56,7 @@ class HomeActivity final : public Activity {
   bool saveCarouselFrameToStorage(int bookIndex);
   void invalidateResidentCarouselFrame();
   void invalidateCarouselFrameHash();
+  void requestFreshHomeRender(bool immediate = false);
   uint32_t getCachedCarouselFrameHash(int bookIndex);
   void scheduleCarouselCoverLoadIfNeeded();
   void loadRecentBooks(int maxBooks);
