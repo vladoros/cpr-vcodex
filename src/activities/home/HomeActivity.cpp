@@ -603,7 +603,6 @@ void HomeActivity::onEnter() {
   lastCarouselBookIndex = 0;
   invalidateResidentCarouselFrame();
   invalidateCarouselFrameHash();
-  cachedRenderDarkModeValid = false;
   carouselFramesReady = false;
   carouselCoverLoadAttemptPath.clear();
 
@@ -785,30 +784,6 @@ void HomeActivity::invalidateCarouselFrameHash() {
   cachedCarouselFrameHashIndex = -1;
   cachedCarouselFrameHash = 0;
   cachedCarouselFrameHashValid = false;
-}
-
-void HomeActivity::invalidateHomeFrameCaches() {
-  coverRendered = false;
-  freeCoverBuffer();
-  invalidateResidentCarouselFrame();
-  invalidateCarouselFrameHash();
-  carouselFramesReady = false;
-}
-
-void HomeActivity::syncHomeFrameCachesWithDarkMode() {
-  const bool currentDarkMode = renderer.isDarkMode();
-  if (!cachedRenderDarkModeValid) {
-    cachedRenderDarkMode = currentDarkMode;
-    cachedRenderDarkModeValid = true;
-    return;
-  }
-
-  if (cachedRenderDarkMode == currentDarkMode) {
-    return;
-  }
-
-  cachedRenderDarkMode = currentDarkMode;
-  invalidateHomeFrameCaches();
 }
 
 void HomeActivity::requestFreshHomeRender(const bool immediate) {
@@ -1074,8 +1049,6 @@ void HomeActivity::render(RenderLock&&) {
   const auto& metrics = UITheme::getInstance().getMetrics();
   const auto pageWidth = renderer.getScreenWidth();
   const auto pageHeight = renderer.getScreenHeight();
-  syncHomeFrameCachesWithDarkMode();
-
   const int recentCount = static_cast<int>(recentBooks.size());
   const bool carouselTheme = isLyraCarouselTheme();
   const bool wasFirstRenderDone = firstRenderDone;

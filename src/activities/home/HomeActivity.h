@@ -36,8 +36,6 @@ class HomeActivity final : public Activity {
   int cachedCarouselFrameHashIndex = -1;
   uint32_t cachedCarouselFrameHash = 0;
   bool cachedCarouselFrameHashValid = false;
-  bool cachedRenderDarkModeValid = false;
-  bool cachedRenderDarkMode = false;
   std::string carouselCoverLoadAttemptPath;
   bool carouselFramesReady = false;
   std::vector<RecentBook> recentBooks;
@@ -58,8 +56,6 @@ class HomeActivity final : public Activity {
   bool saveCarouselFrameToStorage(int bookIndex);
   void invalidateResidentCarouselFrame();
   void invalidateCarouselFrameHash();
-  void invalidateHomeFrameCaches();
-  void syncHomeFrameCachesWithDarkMode();
   void requestFreshHomeRender(bool immediate = false);
   uint32_t getCachedCarouselFrameHash(int bookIndex);
   void scheduleCarouselCoverLoadIfNeeded();
