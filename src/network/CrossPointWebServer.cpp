@@ -423,6 +423,10 @@ constexpr WebSettingDef WEB_SETTINGS[] = {
     WEB_ENUM(StrId::STR_FILE_TRANSFER, fileTransferShortcut, OPT_SHORTCUT_LOCATION, "fileTransferShortcut",
              StrId::STR_SHORTCUTS_SECTION),
     WEB_ENUM(StrId::STR_SLEEP, sleepShortcut, OPT_SHORTCUT_LOCATION, "sleepShortcut", StrId::STR_SHORTCUTS_SECTION),
+    WEB_ENUM(StrId::STR_WEB_DASH, webDashShortcut, OPT_SHORTCUT_LOCATION, "webDashShortcut",
+             StrId::STR_SHORTCUTS_SECTION),
+    WEB_ENUM(StrId::STR_WEATHER, weatherShortcut, OPT_SHORTCUT_LOCATION, "weatherShortcut",
+             StrId::STR_SHORTCUTS_SECTION),
 
     WEB_DYNAMIC_STRING(StrId::STR_KOREADER_USERNAME, WebDynamicSetting::KoUsername, "koUsername",
                        StrId::STR_KOREADER_SYNC),

@@ -658,6 +658,17 @@ bool loadSettingsDirect(CrossPointSettings& s, const JsonDocument& doc, bool* ne
     s.opdsPassword[sizeof(s.opdsPassword) - 1] = '\0';
   }
 
+  loadString("webDashUrl", s.webDashUrl, sizeof(s.webDashUrl));
+  loadEnum("webDashRefreshInterval", s.webDashRefreshInterval, CrossPointSettings::REFRESH_INTERVAL_COUNT);
+  loadEnum("webDashOrientation", s.webDashOrientation, CrossPointSettings::WEB_DASH_ORIENTATION_COUNT);
+  loadEnum("weatherCity", s.weatherCity, CrossPointSettings::WEATHER_CITY_COUNT);
+  loadToggle("weatherTopbarEnabled", s.weatherTopbarEnabled);
+  loadEnum("weatherRefreshInterval", s.weatherRefreshInterval, CrossPointSettings::REFRESH_INTERVAL_COUNT);
+  loadEnum("weatherOrientation", s.weatherOrientation, CrossPointSettings::ORIENTATION_COUNT);
+  if (doc["weatherLastTempC"].is<int>()) {
+    s.weatherLastTempC = static_cast<int8_t>(doc["weatherLastTempC"].as<int>());
+  }
+
   loadToggle("statusBarChapterPageCount", s.statusBarChapterPageCount);
   loadToggle("statusBarBookProgressPercentage", s.statusBarBookProgressPercentage);
   loadEnum("statusBarProgressBar", s.statusBarProgressBar, CrossPointSettings::STATUS_BAR_PROGRESS_BAR_COUNT);
@@ -799,6 +810,12 @@ bool loadSettingsDirect(CrossPointSettings& s, const JsonDocument& doc, bool* ne
       clamp(doc["opdsBrowserShortcut"] | s.opdsBrowserShortcut, shortcutLocationCount, s.opdsBrowserShortcut);
   s.opdsBrowserShortcutOrder = clamp(doc["opdsBrowserShortcutOrder"] | s.opdsBrowserShortcutOrder, shortcutOrderCount,
                                      s.opdsBrowserShortcutOrder);
+  s.webDashShortcut = clamp(doc["webDashShortcut"] | s.webDashShortcut, shortcutLocationCount, s.webDashShortcut);
+  s.webDashShortcutOrder =
+      clamp(doc["webDashShortcutOrder"] | s.webDashShortcutOrder, shortcutOrderCount, s.webDashShortcutOrder);
+  s.weatherShortcut = clamp(doc["weatherShortcut"] | s.weatherShortcut, shortcutLocationCount, s.weatherShortcut);
+  s.weatherShortcutOrder =
+      clamp(doc["weatherShortcutOrder"] | s.weatherShortcutOrder, shortcutOrderCount, s.weatherShortcutOrder);
 
   s.browseFilesShortcutVisible = clamp(doc["browseFilesShortcutVisible"] | s.browseFilesShortcutVisible,
                                        static_cast<uint8_t>(2), s.browseFilesShortcutVisible);
@@ -838,6 +855,12 @@ bool loadSettingsDirect(CrossPointSettings& s, const JsonDocument& doc, bool* ne
       clamp(doc["sleepShortcutVisible"] | s.sleepShortcutVisible, static_cast<uint8_t>(2), s.sleepShortcutVisible);
   s.opdsBrowserShortcutVisible = clamp(doc["opdsBrowserShortcutVisible"] | s.opdsBrowserShortcutVisible,
                                        static_cast<uint8_t>(2), s.opdsBrowserShortcutVisible);
+  s.webDashShortcutVisible =
+      clamp(doc["webDashShortcutVisible"] | s.webDashShortcutVisible, static_cast<uint8_t>(2),
+            s.webDashShortcutVisible);
+  s.weatherShortcutVisible =
+      clamp(doc["weatherShortcutVisible"] | s.weatherShortcutVisible, static_cast<uint8_t>(2),
+            s.weatherShortcutVisible);
 
   migrateLegacyStatsShortcut(s, doc, needsResave);
   normalizeShortcutOrderSettings(s);
@@ -1091,6 +1114,17 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
   doc["koSyncAutoPullOnOpen"] = s.koSyncAutoPullOnOpen;
   doc["koSyncAutoPushOnClose"] = s.koSyncAutoPushOnClose;
 
+  if (s.webDashUrl[0] != '\0') {
+    doc["webDashUrl"] = s.webDashUrl;
+  }
+  doc["webDashRefreshInterval"] = s.webDashRefreshInterval;
+  doc["webDashOrientation"] = s.webDashOrientation;
+  doc["weatherCity"] = s.weatherCity;
+  doc["weatherTopbarEnabled"] = s.weatherTopbarEnabled;
+  doc["weatherRefreshInterval"] = s.weatherRefreshInterval;
+  doc["weatherOrientation"] = s.weatherOrientation;
+  doc["weatherLastTempC"] = static_cast<int>(s.weatherLastTempC);
+
   doc["statusBarChapterPageCount"] = s.statusBarChapterPageCount;
   doc["statusBarBookProgressPercentage"] = s.statusBarBookProgressPercentage;
   doc["statusBarProgressBar"] = s.statusBarProgressBar;
@@ -1150,6 +1184,10 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
   doc["sleepShortcutOrder"] = s.sleepShortcutOrder;
   doc["opdsBrowserShortcut"] = s.opdsBrowserShortcut;
   doc["opdsBrowserShortcutOrder"] = s.opdsBrowserShortcutOrder;
+  doc["webDashShortcut"] = s.webDashShortcut;
+  doc["webDashShortcutOrder"] = s.webDashShortcutOrder;
+  doc["weatherShortcut"] = s.weatherShortcut;
+  doc["weatherShortcutOrder"] = s.weatherShortcutOrder;
   doc["browseFilesShortcutVisible"] = s.browseFilesShortcutVisible;
   doc["syncDayShortcutVisible"] = s.syncDayShortcutVisible;
   doc["settingsShortcutVisible"] = s.settingsShortcutVisible;
@@ -1168,6 +1206,8 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
   doc["screenCleanShortcutVisible"] = s.screenCleanShortcutVisible;
   doc["sleepShortcutVisible"] = s.sleepShortcutVisible;
   doc["opdsBrowserShortcutVisible"] = s.opdsBrowserShortcutVisible;
+  doc["webDashShortcutVisible"] = s.webDashShortcutVisible;
+  doc["weatherShortcutVisible"] = s.weatherShortcutVisible;
 
   return saveJsonDocumentToFile("CPS", path, doc);
 }

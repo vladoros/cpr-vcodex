@@ -19,6 +19,8 @@
 #include "ScreenCleanActivity.h"
 #include "SleepAppActivity.h"
 #include "SyncDayActivity.h"
+#include "WeatherActivity.h"
+#include "WebDashActivity.h"
 #include "activities/settings/ClockSyncActivity.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
@@ -198,6 +200,12 @@ void AppsActivity::openApp(const int index) {
     case ShortcutId::OpdsBrowser:
       activityManager.goToBrowser();
       return;
+    case ShortcutId::WebDash:
+      activity = std::make_unique<WebDashActivity>(renderer, mappedInput);
+      break;
+    case ShortcutId::Weather:
+      activity = std::make_unique<WeatherActivity>(renderer, mappedInput);
+      break;
   }
 
   startActivityForResult(std::move(activity), [this](const ActivityResult&) {

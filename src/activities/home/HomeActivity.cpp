@@ -39,6 +39,8 @@
 #include "activities/apps/ReadingStatsActivity.h"
 #include "activities/apps/SleepAppActivity.h"
 #include "activities/apps/SyncDayActivity.h"
+#include "activities/apps/WeatherActivity.h"
+#include "activities/apps/WebDashActivity.h"
 #include "activities/settings/ClockSyncActivity.h"
 #include "activities/util/ConfirmationActivity.h"
 #include "components/UITheme.h"
@@ -1281,6 +1283,14 @@ void HomeActivity::activateSelection() {
         break;
       case ShortcutId::OpdsBrowser:
         onOpdsBrowserOpen();
+        break;
+      case ShortcutId::Weather:
+        startActivityForResult(std::make_unique<WeatherActivity>(renderer, mappedInput),
+                               [this](const ActivityResult&) { requestFreshHomeRender(true); });
+        break;
+      case ShortcutId::WebDash:
+        startActivityForResult(std::make_unique<WebDashActivity>(renderer, mappedInput),
+                               [this](const ActivityResult&) { requestFreshHomeRender(true); });
         break;
     }
   }

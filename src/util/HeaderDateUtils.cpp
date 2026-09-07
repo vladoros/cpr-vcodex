@@ -26,11 +26,26 @@ void drawHeaderTopLine(const GfxRenderer& renderer, const ThemeMetrics& metrics,
     rightEdge -= renderer.getTextWidth(SMALL_FONT_ID, batteryText.c_str()) + 4;
   }
 
+  char weatherTempText[8] = "";
+  const bool showWeatherTemp =
+      SETTINGS.weatherTopbarEnabled && SETTINGS.weatherLastTempC != CrossPointSettings::WEATHER_TEMP_UNAVAILABLE;
+  int weatherTempX = -1;
+  if (showWeatherTemp) {
+    snprintf(weatherTempText, sizeof(weatherTempText), "%d°C", SETTINGS.weatherLastTempC);
+    const int weatherTempWidth = renderer.getTextWidth(SMALL_FONT_ID, weatherTempText);
+    rightEdge -= weatherTempWidth + 4;
+    weatherTempX = rightEdge + 4;
+  }
+
   int dateX = rightEdge;
   if (!dateText.empty()) {
     const int dateWidth = renderer.getTextWidth(SMALL_FONT_ID, dateText.c_str());
     dateX = std::max(metrics.contentSidePadding, rightEdge - dateWidth);
     renderer.drawText(SMALL_FONT_ID, dateX, metrics.topPadding + 5, dateText.c_str());
+  }
+
+  if (showWeatherTemp) {
+    renderer.drawText(SMALL_FONT_ID, weatherTempX, metrics.topPadding + 5, weatherTempText);
   }
 
   if (!reminderText.empty()) {

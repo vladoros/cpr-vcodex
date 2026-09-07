@@ -560,6 +560,50 @@ class CrossPointSettings {
   uint8_t& focusReadingEnabled = bionicReading;
   uint8_t& moveFinishedToReadFolder = moveCompletedBooks;
 
+  // WebDash app orientation (display orientation of the fetched image)
+  enum WEB_DASH_ORIENTATION { WD_PORTRAIT = 0, WD_LANDSCAPE = 1, WEB_DASH_ORIENTATION_COUNT };
+
+  // Periodic-refresh interval, shared by WebDash and Weather (each keeps its
+  // own setting field below, but both draw from this one value space).
+  // 0=30s 1=1m 2=5m (default) 3=15m 4=30m
+  enum REFRESH_INTERVAL {
+    REFRESH_30S = 0,
+    REFRESH_1M = 1,
+    REFRESH_5M = 2,
+    REFRESH_15M = 3,
+    REFRESH_30M = 4,
+    REFRESH_INTERVAL_COUNT
+  };
+
+  // WebDash app settings
+  char webDashUrl[128] = "";
+  uint8_t webDashRefreshInterval = REFRESH_5M;
+  uint8_t webDashOrientation = WD_PORTRAIT;
+  // WebDash shortcut fields (existing pattern)
+  uint8_t webDashShortcut = SHORTCUT_APPS;
+  uint8_t webDashShortcutOrder = 20;
+  uint8_t webDashShortcutVisible = 1;
+
+  // Weather app settings
+  enum WEATHER_CITY { WEATHER_CITY_AUTO = 0, WEATHER_CITY_LAST = 28, WEATHER_CITY_COUNT = 29 };
+  uint8_t weatherCity = WEATHER_CITY_AUTO;  // 0=Auto (IP geolocation), 1..WEATHER_CITY_LAST=manual city
+  // Weather shortcut fields (existing pattern)
+  uint8_t weatherShortcut = SHORTCUT_APPS;
+  uint8_t weatherShortcutOrder = 21;
+  uint8_t weatherShortcutVisible = 1;
+
+  // Weather top bar + last-known temperature cache (degrees Celsius).
+  // WEATHER_TEMP_UNAVAILABLE means no successful fetch has been cached yet.
+  static constexpr int8_t WEATHER_TEMP_UNAVAILABLE = -128;
+  uint8_t weatherTopbarEnabled = 0;
+  int8_t weatherLastTempC = WEATHER_TEMP_UNAVAILABLE;
+
+  // Weather app auto-refresh interval while open (shares REFRESH_INTERVAL with WebDash)
+  uint8_t weatherRefreshInterval = REFRESH_5M;
+
+  // Weather app display orientation while open (same values as reader ORIENTATION)
+  uint8_t weatherOrientation = PORTRAIT;
+
   ~CrossPointSettings() = default;
 
   // Get singleton instance
