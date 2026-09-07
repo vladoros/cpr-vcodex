@@ -410,6 +410,22 @@ std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* registry) {
                           StrId::STR_SHORTCUTS_SECTION),
         SettingInfo::Enum(StrId::STR_SLEEP, &CrossPointSettings::sleepShortcut,
                           {StrId::STR_HOME_LOCATION, StrId::STR_APPS}, "sleepShortcut", StrId::STR_SHORTCUTS_SECTION),
+        SettingInfo::Enum(StrId::STR_WEB_DASH, &CrossPointSettings::webDashShortcut,
+                          {StrId::STR_HOME_LOCATION, StrId::STR_APPS}, "webDashShortcut",
+                          StrId::STR_SHORTCUTS_SECTION),
+        SettingInfo::Enum(StrId::STR_WEATHER, &CrossPointSettings::weatherShortcut,
+                          {StrId::STR_HOME_LOCATION, StrId::STR_APPS}, "weatherShortcut",
+                          StrId::STR_SHORTCUTS_SECTION),
+        SettingInfo::Toggle(StrId::STR_WEATHER_TOPBAR, &CrossPointSettings::weatherTopbarEnabled,
+                            "weatherTopbarEnabled", StrId::STR_WEATHER_SECTION),
+        SettingInfo::Enum(StrId::STR_WEATHER_REFRESH_INTERVAL, &CrossPointSettings::weatherRefreshInterval,
+                          {StrId::STR_WEB_DASH_INTERVAL_30S, StrId::STR_WEB_DASH_INTERVAL_1M,
+                           StrId::STR_WEB_DASH_INTERVAL_5M, StrId::STR_WEB_DASH_INTERVAL_15M,
+                           StrId::STR_WEB_DASH_INTERVAL_30M},
+                          "weatherRefreshInterval", StrId::STR_WEATHER_SECTION),
+        SettingInfo::Enum(StrId::STR_WEATHER_ORIENTATION, &CrossPointSettings::weatherOrientation,
+                          {StrId::STR_PORTRAIT, StrId::STR_LANDSCAPE_CW, StrId::STR_INVERTED, StrId::STR_LANDSCAPE_CCW},
+                          "weatherOrientation", StrId::STR_WEATHER_SECTION),
 
         // --- KOReader Sync (web-only, uses KOReaderCredentialStore) ---
         SettingInfo::DynamicString(

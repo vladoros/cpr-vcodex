@@ -379,6 +379,17 @@ std::vector<SettingInfo> buildAppSettings() {
       SettingInfo::Enum(StrId::STR_SESSION_SIZE, &CrossPointSettings::flashcardSessionSize,
                         {StrId::STR_NUM_10, StrId::STR_NUM_20, StrId::STR_NUM_30, StrId::STR_NUM_50, StrId::STR_ALL}));
 
+  v.push_back(SettingInfo::Section(StrId::STR_WEATHER_SECTION));
+  v.push_back(SettingInfo::Toggle(StrId::STR_WEATHER_TOPBAR, &CrossPointSettings::weatherTopbarEnabled,
+                                  "weatherTopbarEnabled", StrId::STR_WEATHER_SECTION));
+  v.push_back(SettingInfo::Enum(StrId::STR_WEATHER_REFRESH_INTERVAL, &CrossPointSettings::weatherRefreshInterval,
+                                {StrId::STR_WEB_DASH_INTERVAL_30S, StrId::STR_WEB_DASH_INTERVAL_1M,
+                                 StrId::STR_WEB_DASH_INTERVAL_5M, StrId::STR_WEB_DASH_INTERVAL_15M,
+                                 StrId::STR_WEB_DASH_INTERVAL_30M}));
+  v.push_back(SettingInfo::Enum(StrId::STR_WEATHER_ORIENTATION, &CrossPointSettings::weatherOrientation,
+                                {StrId::STR_PORTRAIT, StrId::STR_LANDSCAPE_CW, StrId::STR_INVERTED,
+                                 StrId::STR_LANDSCAPE_CCW}));
+
   v.push_back(SettingInfo::Section(StrId::STR_SHORTCUTS_SECTION));
   v.push_back(SettingInfo::Action(StrId::STR_SHORTCUT_LOCATION, SettingAction::ShortcutLocation));
   v.push_back(SettingInfo::Action(StrId::STR_SHORTCUT_VISIBILITY, SettingAction::ShortcutVisibility));
