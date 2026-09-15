@@ -37,6 +37,7 @@
 #include "RecentBooksStore.h"
 #include "SdCardFontGlobals.h"
 #include "SilentRestart.h"
+#include "WeatherCacheStore.h"
 #include "UiFontSelection.h"
 #include "activities/Activity.h"
 #include "activities/ActivityManager.h"
@@ -627,6 +628,7 @@ void setup() {
   const bool skipFavoritesLoad = manualSafeBoot || BootRecovery::shouldSkipFavorites();
   const bool skipFlashcardsLoad = manualSafeBoot || BootRecovery::shouldSkipFlashcards();
   const bool skipAchievementsLoad = manualSafeBoot || BootRecovery::shouldSkipAchievements();
+  const bool skipWeatherCacheLoad = manualSafeBoot || BootRecovery::shouldSkipWeatherCache();
   const bool forceHomeBoot = manualSafeBoot || BootRecovery::shouldForceHome();
   const bool otaBoot = isSilentReboot && snapshotTarget == SILENT_REBOOT_TARGET_OTA && !forceHomeBoot &&
                        !recoveryFirmwareMode && !rebootedFromPanic;
@@ -741,6 +743,13 @@ void setup() {
   } else {
     BootRecovery::enterStage(BootRecovery::BootStage::Achievements);
     ACHIEVEMENTS.loadFromFile();
+  }
+
+  if (skipWeatherCacheLoad) {
+    logSkip("Skipping weather cache load due to recovery mode");
+  } else {
+    BootRecovery::enterStage(BootRecovery::BootStage::WeatherCache);
+    WEATHER_CACHE.loadFromFile();
   }
 
   if (halClock.isAvailable() && SETTINGS.clockHasBeenSynced) {

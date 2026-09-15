@@ -6,12 +6,14 @@
 #include <Logging.h>
 #include <WiFi.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <cmath>
 
 #include "CrossPointSettings.h"
+#include "WeatherCacheStore.h"
 #include "WifiCredentialStore.h"
 #include "activities/network/WifiSelectionActivity.h"
 #include "components/UITheme.h"
@@ -94,6 +96,7 @@ void WeatherActivity::onEnter() {
   detectedCityName[0] = '\0';
   detectedLat[0] = '\0';
   detectedLon[0] = '\0';
+  showingCachedData = false;
   wifiConnectedOnEnter = WiFi.status() == WL_CONNECTED;
   wifiEnabledForActivity = false;
 
@@ -106,8 +109,14 @@ void WeatherActivity::onEnter() {
   } else {
     wifiEnabledForActivity = true;
     if (!beginSilentWifiConnect()) {
-      // No saved credentials to try silently; go straight to the picker.
-      goToWifiSelection();
+      // No saved credentials to try silently. Show the last cached weather
+      // rather than forcing the WiFi picker; only fall back to the picker
+      // when there's nothing cached to show.
+      if (WEATHER_CACHE.hasCache()) {
+        showCachedWeather();
+      } else {
+        goToWifiSelection();
+      }
     }
     // Otherwise stay in WIFI_CONNECTING; loop() polls the connection result.
   }
@@ -181,10 +190,29 @@ bool WeatherActivity::detectLocation() {
 }
 
 const char* WeatherActivity::getCurrentCityName() const {
+  if (showingCachedData) {
+    return cachedCityDisplayName[0] ? cachedCityDisplayName : "Auto";
+  }
   if (selectedCity == 0) {
     return detectedCityName[0] ? detectedCityName : "Auto";
   }
   return CITIES[selectedCity - 1].name;
+}
+
+void WeatherActivity::showCachedWeather() {
+  weather = WEATHER_CACHE.getWeather();
+  forecastCount = std::min(WEATHER_CACHE.getForecastCount(), FORECAST_DAYS);
+  const DailyForecast* cached = WEATHER_CACHE.getForecast();
+  for (int i = 0; i < forecastCount; i++) forecast[i] = cached[i];
+
+  strncpy(cachedCityDisplayName, WEATHER_CACHE.getCityName(), sizeof(cachedCityDisplayName) - 1);
+  cachedCityDisplayName[sizeof(cachedCityDisplayName) - 1] = '\0';
+  strncpy(lastUpdateTime, WEATHER_CACHE.getLastUpdateTime(), sizeof(lastUpdateTime) - 1);
+  lastUpdateTime[sizeof(lastUpdateTime) - 1] = '\0';
+
+  showingCachedData = true;
+  state = DISPLAYING;
+  requestUpdate(true);
 }
 
 void WeatherActivity::fetchWeather() {
@@ -216,16 +244,27 @@ void WeatherActivity::fetchWeather() {
 
   std::string response;
   if (!HttpDownloader::fetchUrl(std::string(url), response)) {
-    state = FETCH_ERROR;
-    statusMessage = tr(STR_WEATHER_ERROR);
-    requestUpdate(true);
+    // Fall back to the last cached snapshot rather than a bare error screen
+    // when there's one to show; only WEATHER_CACHE.hasCache() == false hits
+    // the error state.
+    if (WEATHER_CACHE.hasCache()) {
+      showCachedWeather();
+    } else {
+      state = FETCH_ERROR;
+      statusMessage = tr(STR_WEATHER_ERROR);
+      requestUpdate(true);
+    }
     return;
   }
 
   if (!parseWeather(response)) {
-    state = FETCH_ERROR;
-    statusMessage = tr(STR_WEATHER_ERROR);
-    requestUpdate(true);
+    if (WEATHER_CACHE.hasCache()) {
+      showCachedWeather();
+    } else {
+      state = FETCH_ERROR;
+      statusMessage = tr(STR_WEATHER_ERROR);
+      requestUpdate(true);
+    }
     return;
   }
 
@@ -250,6 +289,13 @@ void WeatherActivity::fetchWeather() {
   struct tm ti;
   localtime_r(&now, &ti);
   snprintf(lastUpdateTime, sizeof(lastUpdateTime), "%02d:%02d", ti.tm_hour, ti.tm_min);
+
+  // Clear the offline flag before reading the city name below, so a
+  // mid-session reconnect caches the newly fetched city, not the stale one.
+  showingCachedData = false;
+
+  // Persist this snapshot as the fallback shown next time WiFi/the API isn't reachable.
+  WEATHER_CACHE.update(weather, forecast, forecastCount, getCurrentCityName(), lastUpdateTime);
 
   state = DISPLAYING;
   requestUpdate(true);
@@ -425,16 +471,41 @@ void WeatherActivity::loop() {
       return;
     }
     if (millis() - wifiConnectStartMs >= WIFI_SILENT_CONNECT_TIMEOUT_MS) {
-      // Silent reconnect using saved credentials timed out; fall back to
-      // the interactive picker instead of blocking the UI further.
+      // Silent reconnect using saved credentials timed out. Show the last
+      // cached weather instead of blocking the UI on the interactive picker;
+      // only fall back to the picker when there's nothing cached to show.
       WiFi.disconnect(false);
-      goToWifiSelection();
+      if (WEATHER_CACHE.hasCache()) {
+        showCachedWeather();
+      } else {
+        goToWifiSelection();
+      }
     }
     return;
   }
 
   if (state == DISPLAYING || state == FETCH_ERROR) {
-    auto startRefresh = [this]() {
+    // userInitiated distinguishes an explicit refresh press from the silent
+    // auto-refresh timer below: the interactive WiFi picker should only ever
+    // appear in response to something the user did, never pop up on a timer.
+    auto startRefresh = [this](bool userInitiated) {
+      if (WiFi.status() != WL_CONNECTED) {
+        // Not online (e.g. currently showing a cached snapshot): retry the
+        // connection instead of hitting the API directly, so refresh gives
+        // the user an explicit way back online rather than silently
+        // re-falling-back to the same cache.
+        if (!userInitiated && WIFI_STORE.getLastConnectedSsid().empty()) {
+          return;  // Nothing saved to retry silently; wait for a manual refresh.
+        }
+        wifiEnabledForActivity = true;
+        state = WIFI_CONNECTING;
+        statusMessage = tr(STR_FETCHING_WEATHER);
+        requestUpdate(true);
+        if (!beginSilentWifiConnect() && userInitiated) {
+          goToWifiSelection();
+        }
+        return;
+      }
       state = FETCHING;
       statusMessage = tr(STR_FETCHING_WEATHER);
       requestUpdate(true);
@@ -442,7 +513,7 @@ void WeatherActivity::loop() {
     };
 
     if (confirm) {
-      startRefresh();
+      startRefresh(/*userInitiated=*/true);
       return;
     }
     if (next || prev) {
@@ -456,7 +527,7 @@ void WeatherActivity::loop() {
 
     // Auto-refresh while open at the configured interval (mirrors WebDash viewer)
     if (lastFetchMs != 0 && millis() - lastFetchMs >= refreshIntervalMs(SETTINGS.weatherRefreshInterval)) {
-      startRefresh();
+      startRefresh(/*userInitiated=*/false);
     }
   }
 }
@@ -664,9 +735,13 @@ void WeatherActivity::render(RenderLock&&) {
     // Spacing between a label and the next element, matching the gap used after "Feels like".
     y += renderer.getLineHeight(UI_10_FONT_ID) + 16;
 
-    // Last updated
+    // Last updated (or, when offline, which cached reading this is)
     if (lastUpdateTime[0]) {
-      snprintf(buf, sizeof(buf), "%s: %s", tr(STR_LAST_UPDATED), lastUpdateTime);
+      if (showingCachedData) {
+        snprintf(buf, sizeof(buf), "%s: %s", tr(STR_WEATHER_OFFLINE_CACHED), lastUpdateTime);
+      } else {
+        snprintf(buf, sizeof(buf), "%s: %s", tr(STR_LAST_UPDATED), lastUpdateTime);
+      }
       renderer.drawCenteredText(SMALL_FONT_ID, y, buf);
     }
   } else {
@@ -800,9 +875,13 @@ void WeatherActivity::render(RenderLock&&) {
     // Spacing between a label and the next element, matching the gap used after "Feels like".
     y += renderer.getLineHeight(UI_10_FONT_ID) + 16;
 
-    // Last updated
+    // Last updated (or, when offline, which cached reading this is)
     if (lastUpdateTime[0]) {
-      snprintf(buf, sizeof(buf), "%s: %s", tr(STR_LAST_UPDATED), lastUpdateTime);
+      if (showingCachedData) {
+        snprintf(buf, sizeof(buf), "%s: %s", tr(STR_WEATHER_OFFLINE_CACHED), lastUpdateTime);
+      } else {
+        snprintf(buf, sizeof(buf), "%s: %s", tr(STR_LAST_UPDATED), lastUpdateTime);
+      }
       renderer.drawCenteredText(SMALL_FONT_ID, y, buf);
     }
   }

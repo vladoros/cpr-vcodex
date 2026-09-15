@@ -5,32 +5,12 @@
 #include <string>
 
 #include "CrossPointSettings.h"
+#include "WeatherTypes.h"
 
 struct CityCoord {
   const char* name;
   const char* lat;
   const char* lon;
-};
-
-struct WeatherData {
-  float temperature = 0;
-  float feelsLike = 0;
-  int humidity = 0;
-  int weatherCode = 0;
-  float windSpeed = 0;
-  float dewPoint = 0;
-  float pressure = 0;   // surface pressure (hPa)
-  float uvIndex = 0;
-  int airQuality = -1;  // US AQI; -1 when unavailable
-  char sunrise[6] = "";  // "HH:MM" (city local time)
-  char sunset[6] = "";   // "HH:MM" (city local time)
-};
-
-struct DailyForecast {
-  int weatherCode = 0;
-  float tempMax = 0;
-  float tempMin = 0;
-  char dayLabel[4] = "";  // "Mon", "Tue", etc.
 };
 
 class WeatherActivity final : public Activity {
@@ -57,7 +37,7 @@ class WeatherActivity final : public Activity {
   static const char* tempUnitSuffix() { return "°C"; }
 
  private:
-  static constexpr int FORECAST_DAYS = 5;
+  static constexpr int FORECAST_DAYS = WEATHER_FORECAST_DAYS;
   State state = WIFI_CONNECTING;
   WeatherData weather;
   DailyForecast forecast[FORECAST_DAYS];
@@ -75,6 +55,12 @@ class WeatherActivity final : public Activity {
   bool orientationApplied = false;      // true when the weather orientation was applied
   GfxRenderer::Orientation originalOrientation = GfxRenderer::Portrait;
 
+  // True while the screen is showing WEATHER_CACHE's last-known snapshot
+  // instead of a live fetch (no WiFi/API available). Drives the status line
+  // and makes the refresh button retry the connection instead of the API.
+  bool showingCachedData = false;
+  char cachedCityDisplayName[32] = "";  // city name captured with the cached snapshot
+
   int cityCursor = 0;      // Cursor in city list (0=Auto, 1..CITY_COUNT=cities)
   int cityScrollTop = 0;   // First visible item in city list
 
@@ -87,4 +73,8 @@ class WeatherActivity final : public Activity {
   bool detectLocation();
   const char* getCurrentCityName() const;
   void renderCityList();
+
+  // Falls back to WEATHER_CACHE's last snapshot when a live fetch isn't
+  // possible. Only call when WEATHER_CACHE.hasCache() is true.
+  void showCachedWeather();
 };

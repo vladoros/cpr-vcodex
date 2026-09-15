@@ -24,6 +24,7 @@ enum RecoveryBits : uint32_t {
   SKIP_ACHIEVEMENTS = 1u << 8,
   FORCE_HOME = 1u << 9,
   SKIP_OPDS = 1u << 10,
+  SKIP_WEATHER_CACHE = 1u << 11,
 };
 
 RTC_NOINIT_ATTR uint8_t recordedStageRaw = static_cast<uint8_t>(BootRecovery::BootStage::None);
@@ -61,6 +62,8 @@ uint32_t getSkipMaskForStage(const BootRecovery::BootStage stage) {
       return SKIP_FLASHCARDS | FORCE_HOME;
     case Stage::Achievements:
       return SKIP_ACHIEVEMENTS | FORCE_HOME;
+    case Stage::WeatherCache:
+      return SKIP_WEATHER_CACHE | FORCE_HOME;
     case Stage::RouteDecision:
       return FORCE_HOME;
     case Stage::None:
@@ -225,6 +228,8 @@ const char* getStageName(const BootStage stage) {
       return "flashcards";
     case BootStage::Achievements:
       return "achievements";
+    case BootStage::WeatherCache:
+      return "weatherCache";
     case BootStage::RouteDecision:
       return "routeDecision";
     case BootStage::Completed:
@@ -246,5 +251,6 @@ bool shouldSkipRecentBooks() { return hasMask(SKIP_RECENT_BOOKS); }
 bool shouldSkipFavorites() { return hasMask(SKIP_FAVORITES); }
 bool shouldSkipFlashcards() { return hasMask(SKIP_FLASHCARDS); }
 bool shouldSkipAchievements() { return hasMask(SKIP_ACHIEVEMENTS); }
+bool shouldSkipWeatherCache() { return hasMask(SKIP_WEATHER_CACHE); }
 
 }  // namespace BootRecovery
