@@ -35,8 +35,11 @@
 #include "html/FontsPageHtml.generated.h"
 #include "html/HomePageHtml.generated.h"
 #include "html/IfFoundPageHtml.generated.h"
+#include "html/StocksPageHtml.generated.h"
 #include "html/SettingsPageHtml.generated.h"
 #include "html/js/jszip_minJs.generated.h"
+#include "StockTypes.h"
+#include "StockWatchlistStore.h"
 #include "util/BookCacheUtils.h"
 #include "util/IfFoundFile.h"
 #include "util/TaskWatchdog.h"
@@ -593,6 +596,11 @@ void CrossPointWebServer::begin() {
   server->on("/api/if-found", HTTP_GET, [this] { handleGetIfFound(); });
   server->on("/api/if-found", HTTP_POST, [this] { handlePostIfFound(); });
 
+  // Stock watchlist endpoints
+  server->on("/stocks", HTTP_GET, [this] { handleStocksPage(); });
+  server->on("/api/stocks", HTTP_GET, [this] { handleGetStocks(); });
+  server->on("/api/stocks", HTTP_POST, [this] { handlePostStocks(); });
+
   // OPDS server endpoints
   server->on("/api/opds", HTTP_GET, [this] { handleGetOpdsServers(); });
   server->on("/api/opds", HTTP_POST, [this] { handlePostOpdsServer(); });
@@ -956,6 +964,11 @@ void CrossPointWebServer::handleIfFoundPage() const {
   LOG_DBG("WEB", "Served if_found page");
 }
 
+void CrossPointWebServer::handleStocksPage() const {
+  sendHtmlContent(server.get(), StocksPageHtml, sizeof(StocksPageHtml));
+  LOG_DBG("WEB", "Served stock watchlist page");
+}
+
 void CrossPointWebServer::handleFontList() const {
   const_cast<SdCardFontSystem&>(sdFontSystem).refreshIfDirty();
   const auto& families = sdFontSystem.registry().getFamilies();
@@ -1206,6 +1219,67 @@ void CrossPointWebServer::handlePostIfFound() {
   server->sendContent("}");
   server->sendContent("");
   LOG_DBG("WEB", "Saved if_found content path=%s bytes=%u", path.c_str(), static_cast<unsigned>(written));
+}
+
+void CrossPointWebServer::handleGetStocks() const {
+  server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server->send(200, "application/json", "");
+  server->sendContent("{\"path\":");
+  sendJsonEscaped(server.get(), StockWatchlistStore::getFilePath());
+  server->sendContent(",\"maxSymbols\":");
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "%d", STOCK_MAX_SYMBOLS);
+  server->sendContent(buffer);
+  server->sendContent(",\"fromFile\":");
+  server->sendContent(STOCK_WATCHLIST.isFromFile() ? "true" : "false");
+  server->sendContent(",\"symbols\":[");
+  for (int i = 0; i < STOCK_WATCHLIST.getCount(); i++) {
+    if (i > 0) server->sendContent(",");
+    sendJsonEscaped(server.get(), STOCK_WATCHLIST.getSymbol(i));
+  }
+  server->sendContent("]}");
+  server->sendContent("");
+  LOG_DBG("WEB", "Served stock watchlist: %d symbols", STOCK_WATCHLIST.getCount());
+}
+
+void CrossPointWebServer::handlePostStocks() {
+  const String body = server->arg("plain");
+  // Bound the parse before touching the heap: the file is at most 24 symbols,
+  // so a multi-KB body is either a mistake or an attack.
+  constexpr size_t MAX_BODY = 4096;
+  if (static_cast<size_t>(body.length()) > MAX_BODY) {
+    server->send(413, "application/json", "{\"error\":\"Body is too large\"}");
+    return;
+  }
+
+  JsonDocument doc;
+  const DeserializationError err = deserializeJson(doc, body);
+  if (err) {
+    server->send(400, "application/json", "{\"error\":\"Invalid JSON\"}");
+    return;
+  }
+
+  if (!STOCK_WATCHLIST.applyFromJson(doc.as<JsonVariantConst>())) {
+    server->send(400, "application/json", "{\"error\":\"No valid symbols\"}");
+    return;
+  }
+  if (!STOCK_WATCHLIST.saveAtomic()) {
+    server->send(500, "application/json", "{\"error\":\"Could not save the watchlist\"}");
+    return;
+  }
+
+  server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server->send(200, "application/json", "");
+  server->sendContent("{\"ok\":true,\"count\":");
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "%d", STOCK_WATCHLIST.getCount());
+  server->sendContent(buffer);
+  server->sendContent(",\"maxSymbols\":");
+  snprintf(buffer, sizeof(buffer), "%d", STOCK_MAX_SYMBOLS);
+  server->sendContent(buffer);
+  server->sendContent("}");
+  server->sendContent("");
+  LOG_DBG("WEB", "Saved stock watchlist: %d symbols", STOCK_WATCHLIST.getCount());
 }
 
 void CrossPointWebServer::handleFileListData() const {

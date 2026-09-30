@@ -125,6 +125,11 @@ class CrossPointWebServer {
   void handleGetIfFound() const;
   void handlePostIfFound();
 
+  // Stock watchlist handlers
+  void handleStocksPage() const;
+  void handleGetStocks() const;
+  void handlePostStocks();
+
   // Font upload state
   struct FontUploadState {
     HalFile file;

@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>if_found.txt - CPR-vCodex</title>
+    <title>Stock Watchlist - CPR-vCodex</title>
     <style>
       :root {
         --font-color: #333;
         --bg: #f5f5f5;
         --title-color: #2c3e50;
-        --card-bg: #FFF;
+        --card-bg: #fff;
         --label-color: #7f8c8d;
         --border-color: #eee;
         --accent-color: rgb(110, 154, 130);
@@ -137,6 +137,11 @@
         background: #f8d7da;
         color: #721c24;
       }
+      .hint {
+        font-size: 0.9em;
+        color: var(--label-color);
+        margin-top: 10px;
+      }
       @media (max-width: 600px) {
         body {
           padding: 10px;
@@ -167,29 +172,30 @@
       <a href="/files">File Manager</a>
       <a href="/settings">Settings</a>
       <a href="/fonts">Fonts</a>
-      <a href="/if-found" class="active">if_found.txt</a>
-      <a href="/stocks">Stocks</a>
+      <a href="/if-found">if_found.txt</a>
+      <a href="/stocks" class="active">Stocks</a>
     </div>
 
     <div class="card">
-      <h2>if_found.txt</h2>
-      <p class="meta" id="fileMeta">Loading...</p>
-      <textarea id="content" spellcheck="false" placeholder="Name, contact details, reward note, or any message you want shown by the If Found app."></textarea>
+      <h2>Stock Watchlist</h2>
+      <p class="meta" id="watchlistMeta">Loading...</p>
+      <textarea id="content" spellcheck="false" placeholder='{"formatVersion":1,"symbols":["AAPL","MSFT","^GSPC"]}'></textarea>
       <div class="toolbar">
         <span class="counter" id="counter"></span>
-        <button class="btn" id="saveBtn" type="button" onclick="saveIfFound()">Save</button>
+        <button class="btn" id="saveBtn" type="button" onclick="saveWatchlist()">Save</button>
       </div>
       <div class="message" id="message"></div>
+      <p class="hint">
+        Edit the JSON directly, or replace it with a single array of symbols such as
+        <code>["AAPL","MSFT"]</code>. Tickers are uppercased, non-trading symbols are
+        dropped, duplicates are removed, and index symbols must keep their caret (for
+        example <code>^GSPC</code>). At most one symbol is fetched per tick.
+      </p>
     </div>
 
     <script>
-      let maxBytes = 8192;
-      let currentPath = '/if_found.txt';
-
-      function byteLength(value) {
-        if (window.TextEncoder) return new TextEncoder().encode(value).length;
-        return unescape(encodeURIComponent(value)).length;
-      }
+      let maxSymbols = 24;
+      let currentPath = '/.crosspoint/stock_watchlist.json';
 
       function showMessage(text, isError) {
         const el = document.getElementById('message');
@@ -197,67 +203,113 @@
         el.className = 'message ' + (isError ? 'err' : 'ok');
       }
 
+      function parseSymbols(value) {
+        const trimmed = value.trim();
+        if (!trimmed) return [];
+        let parsed;
+        try {
+          parsed = JSON.parse(trimmed);
+        } catch (err) {
+          throw new Error('Invalid JSON: ' + err.message);
+        }
+        let symbols;
+        if (Array.isArray(parsed)) {
+          symbols = parsed;
+        } else if (parsed && Array.isArray(parsed.symbols)) {
+          symbols = parsed.symbols;
+        } else {
+          throw new Error('Expected a JSON array of symbols, or an object with a "symbols" array.');
+        }
+        if (!symbols.every((s) => typeof s === 'string')) {
+          throw new Error('Every symbol must be a string.');
+        }
+        return symbols;
+      }
+
       function updateCounter() {
         const textarea = document.getElementById('content');
         const counter = document.getElementById('counter');
         const saveBtn = document.getElementById('saveBtn');
-        const bytes = byteLength(textarea.value);
-        counter.textContent = bytes + ' / ' + maxBytes + ' bytes';
-        counter.classList.toggle('too-large', bytes > maxBytes);
-        saveBtn.disabled = bytes > maxBytes;
+        let symbols = [];
+        let error = null;
+        try {
+          symbols = parseSymbols(textarea.value);
+        } catch (err) {
+          error = err;
+        }
+        if (error) {
+          counter.textContent = error.message;
+          counter.classList.add('too-large');
+          saveBtn.disabled = true;
+          return;
+        }
+        counter.textContent = symbols.length + ' / ' + maxSymbols + ' symbols';
+        counter.classList.toggle('too-large', symbols.length === 0 || symbols.length > maxSymbols);
+        saveBtn.disabled = symbols.length === 0 || symbols.length > maxSymbols;
       }
 
-      async function loadIfFound() {
+      async function loadWatchlist() {
         try {
-          const res = await fetch('/api/if-found');
-          if (!res.ok) throw new Error('Could not load if_found.txt');
+          const res = await fetch('/api/stocks');
+          if (!res.ok) throw new Error('Could not load the stock watchlist');
           const data = await res.json();
-          currentPath = data.path || '/if_found.txt';
-          maxBytes = data.maxBytes || 8192;
-          document.getElementById('content').value = data.content || '';
-          document.getElementById('fileMeta').textContent = data.exists
-            ? 'Editing ' + currentPath
-            : currentPath + ' does not exist yet. Saving will create it in the SD root.';
+          currentPath = data.path || currentPath;
+          maxSymbols = data.maxSymbols || maxSymbols;
+          const symbols = data.symbols || [];
+          document.getElementById('content').value = JSON.stringify(
+            {formatVersion: 1, symbols: symbols},
+            null,
+            2
+          );
+          document.getElementById('watchlistMeta').textContent =
+            'Editing ' + currentPath + ' (' + (data.fromFile ? 'file' : 'built-in defaults') + ')';
           updateCounter();
         } catch (err) {
-          showMessage(err.message || 'Could not load if_found.txt', true);
+          showMessage(err.message || 'Could not load the stock watchlist', true);
           updateCounter();
         }
       }
 
-      async function saveIfFound() {
+      async function saveWatchlist() {
         const textarea = document.getElementById('content');
         const saveBtn = document.getElementById('saveBtn');
-        const bytes = byteLength(textarea.value);
-        if (bytes > maxBytes) {
-          showMessage('Content is too large to save.', true);
+        let symbols;
+        try {
+          symbols = parseSymbols(textarea.value);
+        } catch (err) {
+          showMessage(err.message, true);
+          updateCounter();
+          return;
+        }
+        if (symbols.length === 0 || symbols.length > maxSymbols) {
+          showMessage('Provide between 1 and ' + maxSymbols + ' symbols.', true);
+          updateCounter();
           return;
         }
 
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving...';
         try {
-          const res = await fetch('/api/if-found', {
+          const res = await fetch('/api/stocks', {
             method: 'POST',
-            headers: {'Content-Type': 'text/plain; charset=utf-8'},
+            headers: {'Content-Type': 'application/json; charset=utf-8'},
             body: textarea.value
           });
           const data = await res.json().catch(() => ({}));
           if (!res.ok) throw new Error(data.error || 'Save failed');
-          currentPath = data.path || currentPath;
-          document.getElementById('fileMeta').textContent = 'Editing ' + currentPath;
-          showMessage('Saved successfully.', false);
+          maxSymbols = data.maxSymbols || maxSymbols;
+          document.getElementById('watchlistMeta').textContent = 'Editing ' + currentPath + ' (file)';
+          showMessage('Saved ' + (data.count || symbols.length) + ' symbols.', false);
         } catch (err) {
           showMessage(err.message || 'Save failed', true);
         } finally {
           saveBtn.textContent = 'Save';
-          saveBtn.disabled = byteLength(textarea.value) > maxBytes;
           updateCounter();
         }
       }
 
       document.getElementById('content').addEventListener('input', updateCounter);
-      loadIfFound();
+      loadWatchlist();
     </script>
   </body>
 </html>

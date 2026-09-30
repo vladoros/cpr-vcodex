@@ -668,6 +668,16 @@ bool loadSettingsDirect(CrossPointSettings& s, const JsonDocument& doc, bool* ne
   if (doc["weatherLastTempC"].is<int>()) {
     s.weatherLastTempC = static_cast<int8_t>(doc["weatherLastTempC"].as<int>());
   }
+  loadEnum("stockRefreshInterval", s.stockRefreshInterval, CrossPointSettings::STOCK_REFRESH_INTERVAL_COUNT);
+  loadEnum("stockOrientation", s.stockOrientation, CrossPointSettings::ORIENTATION_COUNT);
+  loadToggle("stockTopbarEnabled", s.stockTopbarEnabled);
+  if (doc["stockTopbarValue"].is<float>() || doc["stockTopbarValue"].is<int>()) {
+    s.stockTopbarValue = doc["stockTopbarValue"].as<float>();
+    s.stockTopbarValid = true;
+  }
+  if (doc["stockTopbarChangePositive"].is<bool>()) {
+    s.stockTopbarChangePositive = doc["stockTopbarChangePositive"].as<bool>();
+  }
 
   loadToggle("statusBarChapterPageCount", s.statusBarChapterPageCount);
   loadToggle("statusBarBookProgressPercentage", s.statusBarBookProgressPercentage);
@@ -1124,6 +1134,13 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
   doc["weatherRefreshInterval"] = s.weatherRefreshInterval;
   doc["weatherOrientation"] = s.weatherOrientation;
   doc["weatherLastTempC"] = static_cast<int>(s.weatherLastTempC);
+  doc["stockRefreshInterval"] = s.stockRefreshInterval;
+  doc["stockOrientation"] = s.stockOrientation;
+  doc["stockTopbarEnabled"] = s.stockTopbarEnabled;
+  if (s.stockTopbarValid) {
+    doc["stockTopbarValue"] = s.stockTopbarValue;
+    doc["stockTopbarChangePositive"] = s.stockTopbarChangePositive;
+  }
 
   doc["statusBarChapterPageCount"] = s.statusBarChapterPageCount;
   doc["statusBarBookProgressPercentage"] = s.statusBarBookProgressPercentage;

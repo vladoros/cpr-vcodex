@@ -19,6 +19,7 @@
 #include "ScreenCleanActivity.h"
 #include "SleepAppActivity.h"
 #include "SyncDayActivity.h"
+#include "StockTickerActivity.h"
 #include "WeatherActivity.h"
 #include "WebDashActivity.h"
 #include "activities/settings/ClockSyncActivity.h"
@@ -205,6 +206,9 @@ void AppsActivity::openApp(const int index) {
       break;
     case ShortcutId::Weather:
       activity = std::make_unique<WeatherActivity>(renderer, mappedInput);
+      break;
+    case ShortcutId::StockTicker:
+      activity = std::make_unique<StockTickerActivity>(renderer, mappedInput);
       break;
   }
 

@@ -9,11 +9,15 @@
 #include "CrossPointSettings.h"
 #include "CrossPointState.h"
 #include "ReadingStatsStore.h"
+#include "StockFormat.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 #include "util/TimeUtils.h"
 
 namespace {
+constexpr int CLUSTER_GAP = 8;
+constexpr int STOCK_ARROW_LEFT = 11;
+
 void drawHeaderTopLine(const GfxRenderer& renderer, const ThemeMetrics& metrics, const int pageWidth,
                        const std::string& dateText, const std::string& reminderText) {
   const bool showBatteryPercentage =
@@ -37,11 +41,37 @@ void drawHeaderTopLine(const GfxRenderer& renderer, const ThemeMetrics& metrics,
     weatherTempX = rightEdge + 4;
   }
 
+  char stockText[16] = "";
+  int stockX = -1;
+  int stockArrowY = -1;
+  const bool showStock = SETTINGS.stockTopbarEnabled && SETTINGS.stockTopbarValid;
+  if (showStock) {
+    StockFormat::stockFormatNumber(SETTINGS.stockTopbarValue, 2, stockText, sizeof(stockText));
+    const int stockWidth = renderer.getTextWidth(SMALL_FONT_ID, stockText);
+    rightEdge -= stockWidth + STOCK_ARROW_LEFT + CLUSTER_GAP;
+    stockX = rightEdge + STOCK_ARROW_LEFT + CLUSTER_GAP;
+    stockArrowY = metrics.topPadding + 5;
+  }
+
   int dateX = rightEdge;
   if (!dateText.empty()) {
     const int dateWidth = renderer.getTextWidth(SMALL_FONT_ID, dateText.c_str());
     dateX = std::max(metrics.contentSidePadding, rightEdge - dateWidth);
     renderer.drawText(SMALL_FONT_ID, dateX, metrics.topPadding + 5, dateText.c_str());
+  }
+
+  if (showStock) {
+    renderer.drawText(SMALL_FONT_ID, stockX, stockArrowY, stockText);
+    const int cx = stockX - 8;
+    if (SETTINGS.stockTopbarChangePositive) {
+      renderer.drawLine(cx - 3, stockArrowY + 5, cx, stockArrowY + 1, true);
+      renderer.drawLine(cx, stockArrowY + 1, cx + 3, stockArrowY + 5, true);
+      renderer.drawLine(cx - 3, stockArrowY + 5, cx + 3, stockArrowY + 5, true);
+    } else {
+      renderer.drawLine(cx - 3, stockArrowY + 1, cx, stockArrowY + 5, true);
+      renderer.drawLine(cx, stockArrowY + 5, cx + 3, stockArrowY + 1, true);
+      renderer.drawLine(cx - 3, stockArrowY + 1, cx + 3, stockArrowY + 1, true);
+    }
   }
 
   if (showWeatherTemp) {

@@ -46,6 +46,7 @@
 #include "activities/apps/FavoritesAppActivity.h"
 #include "activities/apps/FlashcardsAppActivity.h"
 #include "activities/apps/IfFoundActivity.h"
+#include "activities/apps/StockTickerInfoActivity.h"
 #include "activities/apps/ReadingHeatmapActivity.h"
 #include "activities/apps/ReadingProfileActivity.h"
 #include "activities/apps/ReadingStatsActivity.h"
@@ -390,6 +391,20 @@ std::vector<SettingInfo> buildAppSettings() {
   v.push_back(SettingInfo::Enum(StrId::STR_WEATHER_ORIENTATION, &CrossPointSettings::weatherOrientation,
                                 {StrId::STR_PORTRAIT, StrId::STR_LANDSCAPE_CW, StrId::STR_INVERTED,
                                  StrId::STR_LANDSCAPE_CCW}));
+
+  v.push_back(SettingInfo::Section(StrId::STR_STOCKS_SECTION));
+  v.push_back(SettingInfo::Toggle(StrId::STR_STOCK_TOPBAR, &CrossPointSettings::stockTopbarEnabled, "stockTopbarEnabled",
+                                  StrId::STR_STOCKS_SECTION));
+  v.push_back(SettingInfo::Enum(StrId::STR_STOCK_REFRESH_INTERVAL, &CrossPointSettings::stockRefreshInterval,
+                                {StrId::STR_STOCK_REFRESH_AUTO, StrId::STR_WEB_DASH_INTERVAL_5M,
+                                 StrId::STR_STOCK_REFRESH_10M, StrId::STR_WEB_DASH_INTERVAL_15M,
+                                 StrId::STR_WEB_DASH_INTERVAL_30M, StrId::STR_STOCK_REFRESH_1H,
+                                 StrId::STR_STOCK_REFRESH_4H}));
+  v.push_back(SettingInfo::Enum(StrId::STR_STOCK_ORIENTATION, &CrossPointSettings::stockOrientation,
+                                {StrId::STR_PORTRAIT, StrId::STR_LANDSCAPE_CW, StrId::STR_INVERTED,
+                                 StrId::STR_LANDSCAPE_CCW}));
+
+  v.push_back(SettingInfo::Action(StrId::STR_STOCK_INFO, SettingAction::StockTickerInfo));
 
   v.push_back(SettingInfo::Section(StrId::STR_SHORTCUTS_SECTION));
   v.push_back(SettingInfo::Action(StrId::STR_SHORTCUT_LOCATION, SettingAction::ShortcutLocation));
@@ -1059,6 +1074,9 @@ void SettingsActivity::runAction(const SettingInfo& setting) {
       break;
     case SettingAction::IfFound:
       startActivityForResult(std::make_unique<IfFoundActivity>(renderer, mappedInput), resultHandler);
+      break;
+    case SettingAction::StockTickerInfo:
+      startActivityForResult(std::make_unique<StockTickerInfoActivity>(renderer, mappedInput), resultHandler);
       break;
     case SettingAction::None:
       // Do nothing

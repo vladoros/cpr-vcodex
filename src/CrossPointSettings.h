@@ -604,6 +604,29 @@ class CrossPointSettings {
   // Weather app display orientation while open (same values as reader ORIENTATION)
   uint8_t weatherOrientation = PORTRAIT;
 
+  enum STOCK_REFRESH_INTERVAL {
+    STOCK_REFRESH_AUTO = 0,
+    STOCK_REFRESH_5M = 1,
+    STOCK_REFRESH_10M = 2,
+    STOCK_REFRESH_15M = 3,
+    STOCK_REFRESH_30M = 4,
+    STOCK_REFRESH_1H = 5,
+    STOCK_REFRESH_4H = 6,
+    STOCK_REFRESH_INTERVAL_COUNT
+  };
+  uint8_t stockRefreshInterval = STOCK_REFRESH_AUTO;
+
+  uint8_t stockOrientation = PORTRAIT;
+
+  uint8_t stockTopbarEnabled = 0;
+  bool stockTopbarValid = false;
+  float stockTopbarValue = 0.0f;
+  bool stockTopbarChangePositive = true;
+
+  uint8_t stockShortcut = SHORTCUT_APPS;
+  uint8_t stockShortcutOrder = 22;
+  uint8_t stockShortcutVisible = 1;
+
   ~CrossPointSettings() = default;
 
   // Get singleton instance

@@ -49,6 +49,7 @@ enum class SettingAction {
   ScreenClean,
   SleepApp,
   IfFound,
+  StockTickerInfo,
 };
 
 struct SettingInfo {
