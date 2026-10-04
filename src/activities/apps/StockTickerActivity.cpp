@@ -36,6 +36,10 @@ constexpr const char* YAHOO_QUERY = "?interval=1d&range=1d";
 // Yahoo's chart endpoint 429s without a User-Agent. This is load-bearing:
 // do not "clean it up".
 
+constexpr int STOCK_PRICE_FONT = NOTOSANS_14_FONT_ID;
+constexpr int STOCK_CHANGE_FONT = NOTOSANS_12_FONT_ID;
+constexpr int STOCK_STATUS_FONT = UI_10_FONT_ID;
+
 void drawTriangleUp(GfxRenderer& r, int cx, int y) {
   r.drawLine(cx - 4, y + 6, cx, y, true);
   r.drawLine(cx, y, cx + 4, y + 6, true);
@@ -466,8 +470,8 @@ void StockTickerActivity::formatLocalTime(int32_t epoch, char* out, size_t outSi
 // --- pagination ------------------------------------------------------------
 
 void StockTickerActivity::updatePagination() {
-  const int priceH = renderer.getLineHeight(UI_12_FONT_ID);
-  const int changeH = renderer.getLineHeight(SMALL_FONT_ID);
+  const int priceH = renderer.getLineHeight(STOCK_PRICE_FONT);
+  const int changeH = renderer.getLineHeight(STOCK_CHANGE_FONT);
   rowHeight = priceH + changeH + 14;
   if (rowHeight < 40) rowHeight = 40;
 }
@@ -492,15 +496,15 @@ void StockTickerActivity::drawStatusLine(int y, const Rect& bounds) {
     snprintf(buf, sizeof(buf), "%s%s%s", stateLabel, (tz[0] != '\0') ? " · " : "", tz);
   }
 
-  const int w = renderer.getTextWidth(UI_10_FONT_ID, buf);
-  renderer.drawText(UI_10_FONT_ID, bounds.x + (bounds.width - w) / 2, y, buf);
+  const int w = renderer.getTextWidth(STOCK_STATUS_FONT, buf);
+  renderer.drawText(STOCK_STATUS_FONT, bounds.x + (bounds.width - w) / 2, y, buf);
 }
 
 void StockTickerActivity::drawRows(int rowsTop, int rowsBottom, const Rect& bounds) {
   char priceBuf[32];
   char changeBuf[48];
-  const int priceH = renderer.getLineHeight(UI_12_FONT_ID);
-  const int changeH = renderer.getLineHeight(SMALL_FONT_ID);
+  const int priceH = renderer.getLineHeight(STOCK_PRICE_FONT);
+  const int changeH = renderer.getLineHeight(STOCK_CHANGE_FONT);
   const int sidePad = UITheme::getInstance().getMetrics().contentSidePadding;
   const int leftX = bounds.x + sidePad;
   const int rightX = bounds.x + bounds.width - sidePad;
@@ -516,20 +520,20 @@ void StockTickerActivity::drawRows(int rowsTop, int rowsBottom, const Rect& boun
     }
 
     // Symbol on the left, price right-aligned on the same baseline.
-    renderer.drawText(UI_12_FONT_ID, leftX, y, q.symbol, true, EpdFontFamily::BOLD);
+    renderer.drawText(STOCK_PRICE_FONT, leftX, y, q.symbol, true, EpdFontFamily::BOLD);
 
     StockFormat::stockFormatNumber(q.price, 2, priceBuf, sizeof(priceBuf));
-    const int priceW = renderer.getTextWidth(UI_12_FONT_ID, priceBuf, EpdFontFamily::BOLD);
-    renderer.drawText(UI_12_FONT_ID, rightX - priceW, y, priceBuf, true, EpdFontFamily::BOLD);
+    const int priceW = renderer.getTextWidth(STOCK_PRICE_FONT, priceBuf, EpdFontFamily::BOLD);
+    renderer.drawText(STOCK_PRICE_FONT, rightX - priceW, y, priceBuf, true, EpdFontFamily::BOLD);
 
     char signedChange[24];
     StockFormat::stockFormatSigned(q.change, 2, signedChange, sizeof(signedChange));
     snprintf(changeBuf, sizeof(changeBuf), "%s (%s%.*f%%)", signedChange, q.changePercent >= 0.0f ? "+" : "",
              2, static_cast<double>(q.changePercent));
 
-    const int changeW = renderer.getTextWidth(SMALL_FONT_ID, changeBuf);
+    const int changeW = renderer.getTextWidth(STOCK_CHANGE_FONT, changeBuf);
     const int changeX = rightX - changeW;
-    renderer.drawText(SMALL_FONT_ID, changeX, y + priceH - 2, changeBuf);
+    renderer.drawText(STOCK_CHANGE_FONT, changeX, y + priceH - 2, changeBuf);
 
     const int triCx = changeX - 10 > leftX + 5 ? changeX - 10 : leftX + 5;
     const int triY = y + priceH - 2 + (changeH - 6) / 2;
@@ -607,7 +611,7 @@ void StockTickerActivity::render(RenderLock&&) {
 
   const int headerTop = bounds.y + metrics.topPadding;
   const int statusY = headerTop + metrics.headerHeight + 2;
-  const int rowsTop = statusY + renderer.getLineHeight(UI_10_FONT_ID) + 6;
+  const int rowsTop = statusY + renderer.getLineHeight(STOCK_STATUS_FONT) + 6;
   const int footerTextH = renderer.getLineHeight(SMALL_FONT_ID);
   const int footerY = bounds.y + bounds.height - footerTextH - 4;
   const int ruleY = footerY - 8;

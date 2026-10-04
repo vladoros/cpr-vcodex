@@ -430,6 +430,8 @@ constexpr WebSettingDef WEB_SETTINGS[] = {
              StrId::STR_SHORTCUTS_SECTION),
     WEB_ENUM(StrId::STR_WEATHER, weatherShortcut, OPT_SHORTCUT_LOCATION, "weatherShortcut",
              StrId::STR_SHORTCUTS_SECTION),
+    WEB_ENUM(StrId::STR_STOCK_TICKER, stockShortcut, OPT_SHORTCUT_LOCATION, "stockShortcut",
+             StrId::STR_SHORTCUTS_SECTION),
 
     WEB_DYNAMIC_STRING(StrId::STR_KOREADER_USERNAME, WebDynamicSetting::KoUsername, "koUsername",
                        StrId::STR_KOREADER_SYNC),

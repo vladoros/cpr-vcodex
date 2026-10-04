@@ -55,9 +55,13 @@ void drawHeaderTopLine(const GfxRenderer& renderer, const ThemeMetrics& metrics,
 
   int dateX = rightEdge;
   if (!dateText.empty()) {
-    const int dateWidth = renderer.getTextWidth(SMALL_FONT_ID, dateText.c_str());
-    dateX = std::max(metrics.contentSidePadding, rightEdge - dateWidth);
-    renderer.drawText(SMALL_FONT_ID, dateX, metrics.topPadding + 5, dateText.c_str());
+    const int available = rightEdge - metrics.contentSidePadding;
+    if (available > 0) {
+      const std::string text = renderer.truncatedText(SMALL_FONT_ID, dateText.c_str(), available);
+      const int dateWidth = renderer.getTextWidth(SMALL_FONT_ID, text.c_str());
+      dateX = rightEdge - dateWidth;
+      renderer.drawText(SMALL_FONT_ID, dateX, metrics.topPadding + 5, text.c_str());
+    }
   }
 
   if (showStock) {

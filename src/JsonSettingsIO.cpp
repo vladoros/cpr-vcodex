@@ -826,6 +826,9 @@ bool loadSettingsDirect(CrossPointSettings& s, const JsonDocument& doc, bool* ne
   s.weatherShortcut = clamp(doc["weatherShortcut"] | s.weatherShortcut, shortcutLocationCount, s.weatherShortcut);
   s.weatherShortcutOrder =
       clamp(doc["weatherShortcutOrder"] | s.weatherShortcutOrder, shortcutOrderCount, s.weatherShortcutOrder);
+  s.stockShortcut = clamp(doc["stockShortcut"] | s.stockShortcut, shortcutLocationCount, s.stockShortcut);
+  s.stockShortcutOrder =
+      clamp(doc["stockShortcutOrder"] | s.stockShortcutOrder, shortcutOrderCount, s.stockShortcutOrder);
 
   s.browseFilesShortcutVisible = clamp(doc["browseFilesShortcutVisible"] | s.browseFilesShortcutVisible,
                                        static_cast<uint8_t>(2), s.browseFilesShortcutVisible);
@@ -871,6 +874,8 @@ bool loadSettingsDirect(CrossPointSettings& s, const JsonDocument& doc, bool* ne
   s.weatherShortcutVisible =
       clamp(doc["weatherShortcutVisible"] | s.weatherShortcutVisible, static_cast<uint8_t>(2),
             s.weatherShortcutVisible);
+  s.stockShortcutVisible =
+      clamp(doc["stockShortcutVisible"] | s.stockShortcutVisible, static_cast<uint8_t>(2), s.stockShortcutVisible);
 
   migrateLegacyStatsShortcut(s, doc, needsResave);
   normalizeShortcutOrderSettings(s);
@@ -1205,6 +1210,8 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
   doc["webDashShortcutOrder"] = s.webDashShortcutOrder;
   doc["weatherShortcut"] = s.weatherShortcut;
   doc["weatherShortcutOrder"] = s.weatherShortcutOrder;
+  doc["stockShortcut"] = s.stockShortcut;
+  doc["stockShortcutOrder"] = s.stockShortcutOrder;
   doc["browseFilesShortcutVisible"] = s.browseFilesShortcutVisible;
   doc["syncDayShortcutVisible"] = s.syncDayShortcutVisible;
   doc["settingsShortcutVisible"] = s.settingsShortcutVisible;
@@ -1225,6 +1232,7 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
   doc["opdsBrowserShortcutVisible"] = s.opdsBrowserShortcutVisible;
   doc["webDashShortcutVisible"] = s.webDashShortcutVisible;
   doc["weatherShortcutVisible"] = s.weatherShortcutVisible;
+  doc["stockShortcutVisible"] = s.stockShortcutVisible;
 
   return saveJsonDocumentToFile("CPS", path, doc);
 }
