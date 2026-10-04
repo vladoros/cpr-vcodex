@@ -17,9 +17,13 @@
 #include "RecentBooksStore.h"
 #include "activities/reader/BookReadingStats.h"
 #include "components/TouchRegistry.h"
+#include "AppCapabilities.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
 #include "components/icons/readingStatsIcons.h"
+#if CROSSINK_APP_HAS_APPS
+#include "components/icons/appsIcons.h"
+#endif
 #include "fontIds.h"
 
 // Internal constants
@@ -77,6 +81,12 @@ const freeink::Icon* LyraTheme::iconForName(UIIcon icon, uint32_t size) {
         return &icon_landmark_24;
       case UIIcon::Opds:
         return &icon_lyra_library_24;
+#if CROSSINK_APP_HAS_APPS
+      case UIIcon::Apps:
+        return &icon_apps_24;
+      case UIIcon::Bluetooth:
+        return &icon_bluetooth_24;
+#endif
       default:
         return nullptr;
     }
@@ -102,6 +112,12 @@ const freeink::Icon* LyraTheme::iconForName(UIIcon icon, uint32_t size) {
         return &icon_wifi_32;
       case UIIcon::Hotspot:
         return &icon_radio_tower_32;
+#if CROSSINK_APP_HAS_APPS
+      case UIIcon::Apps:
+        return &icon_apps_32;
+      case UIIcon::Bluetooth:
+        return &icon_bluetooth_32;
+#endif
       default:
         return nullptr;
     }

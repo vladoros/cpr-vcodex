@@ -88,6 +88,77 @@ CrossInk adds configurable button shortcuts.
 
 See [Controls](./docs/controls.md) for the full action list and defaults.
 
+### Apps and Claude Buddy (Xteink X4 Pro, experimental)
+
+Devices that ship an app get an **Apps** entry on Home. The X4 Pro includes **Claude Buddy**, which turns the reader into a status display for [Claude Desktop's Hardware Buddy](https://github.com/anthropics/claude-desktop-buddy). It talks to Claude Desktop directly over Bluetooth LE, so nothing extra runs on your computer or on the reader. Bluetooth is on only while Claude Buddy is open, and the reader stays awake while it is.
+
+Claude Buddy has four pages, shown as dots at the bottom, like the Reading Stats screen. The header shows the page name. Swipe left or right to change page (a swipe right on the first page leaves the app), or use the Left and Right buttons. Up and Down also change page when the page has nothing to scroll; on a long page they scroll instead, as does a swipe up or down.
+
+- **Status**: your Claude Code and Cowork sessions (running, waiting), the current message, recent activity, tokens today and level, with a small ASCII pet whose mood follows the state. It shows a title like "Felix's Clawd" when the desktop sends your name and a pet name.
+- **Last reply**: Claude's most recent reply, wrapped and scrollable.
+- **Stats**: approvals, denials, median time to approve, level progress, token counts, link encryption and the Bluetooth name.
+- **Options**: choose one of six pets and forget pairings.
+
+When Claude needs permission, the prompt takes over the screen from any page. Approve or Deny by touch, or with Confirm and Back (while a prompt is open, Back means Deny).
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="./docs/images/claude-buddy-sleep.png" alt="Claude Buddy: Not connected" width="220" /><br/>
+      <em>Not connected</em>
+    </td>
+    <td align="center">
+      <img src="./docs/images/claude-buddy-idle.png" alt="Claude Buddy: Idle" width="220" /><br/>
+      <em>Idle</em>
+    </td>
+    <td align="center">
+      <img src="./docs/images/claude-buddy-working.png" alt="Claude Buddy: Working" width="220" /><br/>
+      <em>Working</em>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./docs/images/claude-buddy-approval.png" alt="Claude Buddy: Needs approval" width="220" /><br/>
+      <em>Needs approval</em>
+    </td>
+    <td align="center">
+      <img src="./docs/images/claude-buddy-approved.png" alt="Claude Buddy: Approved" width="220" /><br/>
+      <em>Approved</em>
+    </td>
+    <td align="center">
+      <img src="./docs/images/claude-buddy-done.png" alt="Claude Buddy: Done" width="220" /><br/>
+      <em>Done</em>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="./docs/images/claude-buddy-reply.png" alt="Claude Buddy: Last reply" width="220" /><br/>
+      <em>Last reply</em>
+    </td>
+    <td align="center">
+      <img src="./docs/images/claude-buddy-stats.png" alt="Claude Buddy: Stats" width="220" /><br/>
+      <em>Stats</em>
+    </td>
+    <td align="center">
+      <img src="./docs/images/claude-buddy-options.png" alt="Claude Buddy: Options" width="220" /><br/>
+      <em>Options</em>
+    </td>
+  </tr>
+</table>
+
+The pets: cat, capybara, ghost, robot, owl and rabbit.
+
+<img src="./docs/images/claude-buddy-pets.png" alt="The six Claude Buddy pets" width="640" />
+
+<sub>Screens captured in the simulator.</sub>
+
+To pair, open Claude Buddy, then in Claude Desktop (macOS or Windows) turn on Developer Mode (Help > Troubleshooting), choose Developer > Open Hardware Buddy, connect to `Claude-XXXX` and type the 6-digit code shown on the reader. Claude Desktop only offers this in Developer Mode and it is not an officially supported product feature.
+
+If you use Forget (on the reader or in Claude Desktop), also remove `Claude-XXXX` from macOS System Settings > Bluetooth before pairing again. Otherwise the Mac keeps its old pairing key, and the connection drops a moment after it starts.
+
 ---
 
 ## Tips for the best reading experience

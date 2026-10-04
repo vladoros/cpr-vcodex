@@ -1,3 +1,10 @@
+## [Unreleased]
+
+### Added
+
+- Add an Apps entry to the Home menu on devices that ship an app, opening a list of extra apps, in every Home theme including Cover Grid.
+- Add Claude Buddy to Apps on the Xteink X4 Pro: pair it with Claude Desktop (Developer > Open Hardware Buddy) over Bluetooth to see Claude Code session status, read Claude's last reply, view approval stats, and approve or deny permission prompts from the reader. It has Status, Last reply, Stats and Options pages, six pets to choose from. Pages are shown as dots like the Reading Stats screen. Bluetooth runs only while the app is open.
+
 ## [v1.6.1] - 2026-10-03
 
 ### Added

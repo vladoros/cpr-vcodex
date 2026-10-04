@@ -21,6 +21,7 @@
 #include "OpdsServerStore.h"
 #include "RecentBooksStore.h"
 #include "SilentRestart.h"
+#include "apps/AppsActivity.h"
 #include "boot_sleep/BootActivity.h"
 #include "boot_sleep/SleepActivity.h"
 #include "browser/OpdsBookBrowserActivity.h"
@@ -948,6 +949,17 @@ void ActivityManager::goToSettings(const bool dismissOnUpSwipe) {
   replaceActivity(std::make_unique<SettingsActivity>(renderer, mappedInput, dismissOnUpSwipe));
 }
 
+void ActivityManager::goToApps() {
+#if CROSSINK_APP_HAS_APPS
+  auto apps = makeUniqueNoThrow<AppsActivity>(renderer, mappedInput);
+  if (!apps) {
+    LOG_ERR("ACT", "Cannot allocate Apps activity");
+    return;
+  }
+  replaceActivity(std::move(apps));
+#endif
+}
+
 void ActivityManager::goToFileBrowser(std::string path) {
   replaceActivity(std::make_unique<FileBrowserActivity>(renderer, mappedInput, std::move(path)));
 }
@@ -1073,6 +1085,8 @@ void ActivityManager::goHome(HomeMenuItem initialMenuItem, const HalDisplay::Ref
       initialMenuItem = HomeMenuItem::FILE_TRANSFER;
     } else if (activityName == "Settings") {
       initialMenuItem = HomeMenuItem::SETTINGS_MENU;
+    } else if (activityName == "Apps") {
+      initialMenuItem = HomeMenuItem::APPS;
     }
   }
   replaceActivity(std::make_unique<HomeActivity>(renderer, mappedInput, initialMenuItem, initialRefreshMode,

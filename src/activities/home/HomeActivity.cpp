@@ -25,6 +25,7 @@
 #include "../reader/BookStatsActivity.h"
 #include "../reader/BookStatsTracking.h"
 #include "../reader/EpubReaderUtils.h"
+#include "AppCapabilities.h"
 #include "BookmarkStore.h"
 #include "ClippingStore.h"
 #include "CrossPointSettings.h"
@@ -62,6 +63,7 @@ enum class HomeMenuAction {
   Bookmarks,
   FileTransfer,
   Settings,
+  Apps,
 };
 
 struct HomeMenuEntry {
@@ -71,7 +73,7 @@ struct HomeMenuEntry {
 };
 
 struct HomeMenuEntries {
-  static constexpr int kCapacity = 8;
+  static constexpr int kCapacity = 8 + (CROSSINK_APP_HAS_APPS ? 1 : 0);
   std::array<HomeMenuEntry, kCapacity> entries{};
   int count = 0;
 
@@ -247,6 +249,9 @@ void appendHomeMenuItems(HomeMenuEntries& items, bool hasOpdsServers, bool hasRe
   if (hasBookmarks || hasClippings) {
     items.push({savedItemsLabel(hasBookmarks, hasClippings), BookmarkIcon, HomeMenuAction::Bookmarks});
   }
+#if CROSSINK_APP_HAS_APPS
+  items.push({tr(STR_APPS), Apps, HomeMenuAction::Apps});
+#endif
 
   items.push({tr(STR_FILE_TRANSFER), Transfer, HomeMenuAction::FileTransfer});
   items.push({tr(STR_SETTINGS_TITLE), Settings, HomeMenuAction::Settings});
@@ -275,6 +280,9 @@ HomeMenuEntries buildMinimalMenuItems(bool hasOpdsServers, bool hasReadingStats,
   if (hasReadingStats) {
     items.push({tr(STR_READING_STATS), Chart, HomeMenuAction::ReadingStats});
   }
+#if CROSSINK_APP_HAS_APPS
+  items.push({tr(STR_APPS), Apps, HomeMenuAction::Apps});
+#endif
 
   items.push({tr(STR_FILE_TRANSFER), Transfer, HomeMenuAction::FileTransfer});
   return items;
@@ -302,6 +310,8 @@ HomeMenuAction homeActionForInitialMenuItem(HomeMenuItem item) {
       return HomeMenuAction::FileTransfer;
     case HomeMenuItem::SETTINGS_MENU:
       return HomeMenuAction::Settings;
+    case HomeMenuItem::APPS:
+      return HomeMenuAction::Apps;
     case HomeMenuItem::NONE:
     default:
       return HomeMenuAction::ContinueReading;
@@ -529,7 +539,7 @@ static_assert(HomeActivity::kMaxCachedBooks >= LyraCarouselMetrics::values.homeR
               "kMaxCachedBooks must cover all carousel slots");
 
 int HomeActivity::getMenuItemCount() const {
-  if (coverGridUi) return static_cast<int>(recentBooks.size()) + (hasOpdsServers ? 5 : 4);
+  if (coverGridUi) return static_cast<int>(recentBooks.size()) + coverGridTabCount(hasOpdsServers);
   const auto& metrics = UITheme::getInstance().getMetrics();
   int count = 4;  // File Browser, Library, File transfer, Settings
   if (!metrics.homeContinueReadingInMenu && !recentBooks.empty()) {
@@ -544,6 +554,9 @@ int HomeActivity::getMenuItemCount() const {
     count++;
   }
   if (hasBookmarks || hasClippings) {
+    count++;
+  }
+  if (CROSSINK_APP_HAS_APPS) {
     count++;
   }
   return count;
@@ -882,19 +895,24 @@ void HomeActivity::onEnter() {
     const int base = static_cast<int>(recentBooks.size());
     switch (initialMenuItem) {
       case HomeMenuItem::FILE_BROWSER:
-        selectorIndex = base;
+        selectorIndex = base + coverGridTabIndex(CoverGridTab::Browse, hasOpdsServers);
         break;
       case HomeMenuItem::LIBRARY:
-        selectorIndex = base + 1;
+        selectorIndex = base + coverGridTabIndex(CoverGridTab::Library, hasOpdsServers);
         break;
       case HomeMenuItem::OPDS_BROWSER:
-        selectorIndex = base + 2;
+        selectorIndex = base + coverGridTabIndex(CoverGridTab::Opds, hasOpdsServers);
         break;
       case HomeMenuItem::FILE_TRANSFER:
-        selectorIndex = base + (hasOpdsServers ? 3 : 2);
+        selectorIndex = base + coverGridTabIndex(CoverGridTab::Transfer, hasOpdsServers);
         break;
       case HomeMenuItem::SETTINGS_MENU:
-        selectorIndex = base + (hasOpdsServers ? 4 : 3);
+        selectorIndex = base + coverGridTabIndex(CoverGridTab::Settings, hasOpdsServers);
+        break;
+      case HomeMenuItem::APPS:
+        if (coverGridTabPresent(CoverGridTab::Apps, hasOpdsServers)) {
+          selectorIndex = base + coverGridTabIndex(CoverGridTab::Apps, hasOpdsServers);
+        }
         break;
       case HomeMenuItem::NONE:
         break;
@@ -1402,7 +1420,7 @@ void HomeActivity::loop() {
     }
 
     const int bookCount = static_cast<int>(recentBooks.size());
-    const int tabCount = hasOpdsServers ? 5 : 4;
+    const int tabCount = coverGridTabCount(hasOpdsServers);
     const auto cycleBand = [this](const int base, const int count, const int dir) {
       if (count <= 0) return;
       const int current = selectorIndex - base;
@@ -1474,6 +1492,9 @@ void HomeActivity::loop() {
             break;
           case HomeMenuAction::FileTransfer:
             onFileTransferOpen();
+            break;
+          case HomeMenuAction::Apps:
+            onAppsOpen();
             break;
           case HomeMenuAction::ContinueReading:
           case HomeMenuAction::Settings:
@@ -1722,6 +1743,9 @@ void HomeActivity::loop() {
         break;
       case HomeMenuAction::Settings:
         onSettingsOpen();
+        break;
+      case HomeMenuAction::Apps:
+        onAppsOpen();
         break;
     }
   };
@@ -1980,29 +2004,25 @@ void HomeActivity::activateCoverGridSelection() {
     return;
   }
   const int tab = selectorIndex - static_cast<int>(recentBooks.size());
-  switch (tab) {
-    case 0:
+  if (tab < 0 || tab >= coverGridTabCount(hasOpdsServers)) return;
+  switch (coverGridTabAt(tab, hasOpdsServers)) {
+    case CoverGridTab::Browse:
       onFileBrowserOpen();
       break;
-    case 1:
+    case CoverGridTab::Library:
       onLibraryOpen();
       break;
-    case 2:
-      if (hasOpdsServers) {
-        onOpdsBrowserOpen();
-      } else {
-        onFileTransferOpen();
-      }
+    case CoverGridTab::Opds:
+      onOpdsBrowserOpen();
       break;
-    case 3:
-      if (hasOpdsServers) {
-        onFileTransferOpen();
-      } else {
-        onSettingsOpen();
-      }
+    case CoverGridTab::Apps:
+      onAppsOpen();
       break;
-    case 4:
-      if (hasOpdsServers) onSettingsOpen();
+    case CoverGridTab::Transfer:
+      onFileTransferOpen();
+      break;
+    case CoverGridTab::Settings:
+      onSettingsOpen();
       break;
   }
 }
@@ -2330,6 +2350,8 @@ void HomeActivity::onLibraryOpen() { activityManager.goToLibrary(); }
 void HomeActivity::onSettingsOpen() { activityManager.goToSettings(); }
 
 void HomeActivity::onFileTransferOpen() { activityManager.goToFileTransfer(); }
+
+void HomeActivity::onAppsOpen() { activityManager.goToApps(); }
 
 void HomeActivity::onOpdsBrowserOpen() { activityManager.goToBrowser(); }
 

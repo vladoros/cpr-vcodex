@@ -19,6 +19,16 @@
 #error "CROSSINK_APP_CAP_USB_DRIVE must be 0 or 1"
 #endif
 
+#ifndef CROSSINK_APP_CAP_CLAUDE_BUDDY
+#error "Define CROSSINK_APP_CAP_CLAUDE_BUDDY as 0 or 1 in the PlatformIO environment"
+#endif
+
+#if CROSSINK_APP_CAP_CLAUDE_BUDDY != 0 && CROSSINK_APP_CAP_CLAUDE_BUDDY != 1
+#error "CROSSINK_APP_CAP_CLAUDE_BUDDY must be 0 or 1"
+#endif
+
+#define CROSSINK_APP_HAS_APPS (CROSSINK_APP_CAP_CLAUDE_BUDDY)
+
 // Native simulator BoardConfig intentionally exposes only simulated runtime
 // profiles, so keep this firmware-image identity available at the app layer.
 #if defined(FREEINK_DEVICE_X4CLASSIC) && FREEINK_DEVICE_X4CLASSIC

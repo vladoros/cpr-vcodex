@@ -4,12 +4,47 @@
 #include <string>
 #include <vector>
 
+#include "AppCapabilities.h"
 #include "HomeCoverCache.h"
 #include "RecentBooksStore.h"
 #include "UiAppHost.h"
 #include "components/bars/tab-bar.h"
 #include "components/media/book-card.h"
 #include "components/media/cover-grid.h"
+
+enum class CoverGridTab : uint8_t { Browse, Library, Opds, Apps, Transfer, Settings };
+
+constexpr bool coverGridTabPresent(const CoverGridTab tab, const bool hasOpds) {
+  if (tab == CoverGridTab::Opds) return hasOpds;
+  if (tab == CoverGridTab::Apps) return CROSSINK_APP_HAS_APPS != 0;
+  return true;
+}
+
+constexpr int coverGridTabCount(const bool hasOpds) {
+  int count = 0;
+  for (int i = 0; i <= static_cast<int>(CoverGridTab::Settings); ++i) {
+    if (coverGridTabPresent(static_cast<CoverGridTab>(i), hasOpds)) ++count;
+  }
+  return count;
+}
+
+constexpr CoverGridTab coverGridTabAt(const int index, const bool hasOpds) {
+  int seen = 0;
+  for (int i = 0; i <= static_cast<int>(CoverGridTab::Settings); ++i) {
+    const auto tab = static_cast<CoverGridTab>(i);
+    if (!coverGridTabPresent(tab, hasOpds)) continue;
+    if (seen++ == index) return tab;
+  }
+  return CoverGridTab::Settings;
+}
+
+constexpr int coverGridTabIndex(const CoverGridTab tab, const bool hasOpds) {
+  int index = 0;
+  for (int i = 0; i < static_cast<int>(tab); ++i) {
+    if (coverGridTabPresent(static_cast<CoverGridTab>(i), hasOpds)) ++index;
+  }
+  return index;
+}
 
 class CoverGridHomeUi final : public UiAppHost<16, 1> {
  public:
@@ -61,5 +96,5 @@ class CoverGridHomeUi final : public UiAppHost<16, 1> {
   freeink::ui::CoverGridProps grid;
   freeink::ui::Rect gridBounds{};
   freeink::ui::TabBarProps tabs;
-  std::array<freeink::ui::TabItem, 5> tabItems;
+  std::array<freeink::ui::TabItem, 6> tabItems;
 };

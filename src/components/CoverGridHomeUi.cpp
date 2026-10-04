@@ -11,6 +11,9 @@
 #include "MappedInputManager.h"
 #include "UITheme.h"
 #include "components/icons/listIcons.h"
+#if CROSSINK_APP_HAS_APPS
+#include "components/icons/appsIcons.h"
+#endif
 
 namespace fui = freeink::ui;
 namespace {
@@ -226,17 +229,34 @@ void CoverGridHomeUi::drawGrid(UiScreen& screen) {
   fui::coverGrid(screen.frame(), rect, grid);
 }
 
+namespace {
+const freeink::Icon* coverGridTabIcon(const CoverGridTab tab) {
+  switch (tab) {
+    case CoverGridTab::Browse:
+      return &icon_folder_32;
+    case CoverGridTab::Library:
+      return &icon_landmark_32;
+    case CoverGridTab::Opds:
+      return &icon_lyra_library_32;
+#if CROSSINK_APP_HAS_APPS
+    case CoverGridTab::Apps:
+      return &icon_apps_32;
+#endif
+    case CoverGridTab::Transfer:
+      return &icon_lyra_transfer_32;
+    default:
+      return &icon_lyra_settings_32;
+  }
+}
+}  // namespace
+
 void CoverGridHomeUi::drawTabs(UiScreen& screen, fui::Rect rect) {
-  static constexpr const freeink::Icon* ICONS[] = {&icon_folder_32, &icon_landmark_32, &icon_lyra_library_32,
-                                                   &icon_lyra_transfer_32, &icon_lyra_settings_32};
-  int count = 0;
-  for (int i = 0; i < 5; ++i) {
-    if (i == 2 && !hasOpds) continue;
-    auto& tab = tabItems[count];
-    tab.value = books->size() + count;
+  const int count = coverGridTabCount(hasOpds);
+  for (int i = 0; i < count; ++i) {
+    auto& tab = tabItems[i];
+    tab.value = books->size() + i;
     tab.selected = selected == tab.value;
     tab.label = nullptr;
-    ++count;
   }
   tabs.tabs = tabItems.data();
   tabs.count = count;
@@ -248,8 +268,7 @@ void CoverGridHomeUi::drawTabs(UiScreen& screen, fui::Rect rect) {
   tabs.iconPainter = [](fui::DrawTarget&, fui::Rect iconRect, const fui::TabItem& tab, uint8_t, void* user) {
     const auto& self = *static_cast<CoverGridHomeUi*>(user);
     const int index = tab.value - static_cast<int>(self.books->size());
-    const int icon = !self.hasOpds && index >= 2 ? index + 1 : index;
-    drawLucideIcon(self.renderer, *ICONS[icon], iconRect.x, iconRect.y);
+    drawLucideIcon(self.renderer, *coverGridTabIcon(coverGridTabAt(index, self.hasOpds)), iconRect.x, iconRect.y);
     return true;
   };
   tabs.tabStyles.normal.background = fui::Paint::solid(fui::Color::White);

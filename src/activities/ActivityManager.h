@@ -50,7 +50,7 @@ struct LiveLightSwipeState {
 #endif
 
 enum class RequestUpdateResult { Rendered, Rejected };
-enum class HomeMenuItem { NONE, FILE_BROWSER, LIBRARY, OPDS_BROWSER, FILE_TRANSFER, SETTINGS_MENU };
+enum class HomeMenuItem { NONE, FILE_BROWSER, LIBRARY, OPDS_BROWSER, FILE_TRANSFER, SETTINGS_MENU, APPS };
 
 /**
  * ActivityManager
@@ -150,6 +150,7 @@ class ActivityManager {
   bool goToNearbyBookSend(std::string path, bool returnToReader);
   void goToNearbyBookReceive();
   void goToSettings(bool dismissOnUpSwipe = false);
+  void goToApps();
   void goToFileBrowser(std::string path = {});
   void goToLibrary();
   void goToBrowser();

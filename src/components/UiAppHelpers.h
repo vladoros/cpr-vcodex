@@ -8,9 +8,13 @@
 
 #include "MappedInputManager.h"
 #include "components/UIScale.h"
+#include "AppCapabilities.h"
 #include "components/UITheme.h"
 #include "components/UIThemeTokens.h"
 #include "components/icons/listIcons.h"
+#if CROSSINK_APP_HAS_APPS
+#include "components/icons/appsIcons.h"
+#endif
 
 // Shared glue for activities hosting a FreeInkApp: the font-bound render
 // target and the touch snapshot FreeInkApp routing consumes.
@@ -104,6 +108,12 @@ inline freeink::ui::BitmapRef listIconFor(const UIIcon icon, const int size = 24
         return freeink::ui::bitmapFromIcon(icon_lyra_library_32);
       case UIIcon::Hotspot:
         return freeink::ui::bitmapFromIcon(icon_radio_tower_32);
+#if CROSSINK_APP_HAS_APPS
+      case UIIcon::Apps:
+        return freeink::ui::bitmapFromIcon(icon_apps_32);
+      case UIIcon::Bluetooth:
+        return freeink::ui::bitmapFromIcon(icon_bluetooth_32);
+#endif
       default:
         return {};
     }
@@ -127,6 +137,12 @@ inline freeink::ui::BitmapRef listIconFor(const UIIcon icon, const int size = 24
       return freeink::ui::bitmapFromIcon(icon_lyra_library_24);
     case UIIcon::Hotspot:
       return freeink::ui::bitmapFromIcon(icon_radio_tower_24);
+#if CROSSINK_APP_HAS_APPS
+    case UIIcon::Apps:
+      return freeink::ui::bitmapFromIcon(icon_apps_24);
+    case UIIcon::Bluetooth:
+      return freeink::ui::bitmapFromIcon(icon_bluetooth_24);
+#endif
     default:
       return {};
   }
