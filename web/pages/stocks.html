@@ -1,0 +1,15 @@
+<div class="card">
+      <h2>Stock Watchlist</h2>
+      <p class="meta" id="watchlistMeta">Loading...</p>
+      <textarea id="content" spellcheck="false" placeholder='{"formatVersion":1,"symbols":["AAPL","MSFT","^GSPC"]}'></textarea>
+      <div class="toolbar">
+        <span class="counter" id="counter"></span>
+        <button class="btn btn-primary" id="saveBtn" type="button">Save</button>
+      </div>
+      <div class="message" id="message"></div>
+      <p class="hint">
+        Edit the JSON, or paste a plain array such as <code>["AAPL","MSFT"]</code>. Symbols are
+        uppercased, invalid and duplicate entries are dropped, and indices keep their caret
+        (for example <code>^GSPC</code>). The Stock Ticker app reads the list the next time it opens.
+      </p>
+    </div>

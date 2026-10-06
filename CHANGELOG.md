@@ -2,8 +2,11 @@
 
 ### Added
 
-- Add an Apps entry to the Home menu on devices that ship an app, opening a list of extra apps, in every Home theme including Cover Grid.
+- Add an Apps entry to the Home menu, opening a list of extra apps, in every Home theme including Cover Grid.
 - Add Claude Buddy to Apps on the Xteink X4 Pro: pair it with Claude Desktop (Developer > Open Hardware Buddy) over Bluetooth to see Claude Code session status, read Claude's last reply, view approval stats, and approve or deny permission prompts from the reader. It has Status, Last reply, Stats and Options pages, six pets to choose from. Pages are shown as dots like the Reading Stats screen. Bluetooth runs only while the app is open.
+- Add a Weather app to Apps on every device: current conditions, air quality, sunrise and sunset, and a 5-day forecast from Open-Meteo for your IP location or one of 28 cities, in portrait or landscape.
+- Add a Stock Ticker app to Apps on every device: quotes for a watchlist of up to 24 symbols (including indices and non-US listings) from Yahoo Finance, with market status, quote age and paging. Edit the watchlist from File Transfer at `/stocks`.
+- Weather and Stock Ticker keep their last result on the SD card and show it, marked as cached, when Wi-Fi or the service is unavailable. Each has an Options page for refresh interval, orientation, and showing the temperature or index value next to the battery at the top of the screen.
 
 ## [v1.6.1] - 2026-10-03
 

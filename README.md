@@ -90,7 +90,7 @@ See [Controls](./docs/controls.md) for the full action list and defaults.
 
 ### Apps and Claude Buddy (Xteink X4 Pro, experimental)
 
-Devices that ship an app get an **Apps** entry on Home. The X4 Pro includes **Claude Buddy**, which turns the reader into a status display for [Claude Desktop's Hardware Buddy](https://github.com/anthropics/claude-desktop-buddy). It talks to Claude Desktop directly over Bluetooth LE, so nothing extra runs on your computer or on the reader. Bluetooth is on only while Claude Buddy is open, and the reader stays awake while it is.
+Every device has an **Apps** entry on Home (see [Weather and Stock Ticker](#weather-and-stock-ticker-all-devices)). The X4 Pro also includes **Claude Buddy**, which turns the reader into a status display for [Claude Desktop's Hardware Buddy](https://github.com/anthropics/claude-desktop-buddy). It talks to Claude Desktop directly over Bluetooth LE, so nothing extra runs on your computer or on the reader. Bluetooth is on only while Claude Buddy is open, and the reader stays awake while it is.
 
 Claude Buddy has four pages, shown as dots at the bottom, like the Reading Stats screen. The header shows the page name. Swipe left or right to change page (a swipe right on the first page leaves the app), or use the Left and Right buttons. Up and Down also change page when the page has nothing to scroll; on a long page they scroll instead, as does a swipe up or down.
 
@@ -158,6 +158,36 @@ The pets: cat, capybara, ghost, robot, owl and rabbit.
 To pair, open Claude Buddy, then in Claude Desktop (macOS or Windows) turn on Developer Mode (Help > Troubleshooting), choose Developer > Open Hardware Buddy, connect to `Claude-XXXX` and type the 6-digit code shown on the reader. Claude Desktop only offers this in Developer Mode and it is not an officially supported product feature.
 
 If you use Forget (on the reader or in Claude Desktop), also remove `Claude-XXXX` from macOS System Settings > Bluetooth before pairing again. Otherwise the Mac keeps its old pairing key, and the connection drops a moment after it starts.
+
+### Weather and Stock Ticker (all devices)
+
+Two network apps live in **Apps** on every device. Each joins your last saved Wi-Fi network when it opens (or shows the Wi-Fi picker if there is none), turns Wi-Fi off again when you leave, and keeps the last good result on the SD card. When the network is not reachable you get that cached screen, marked as cached, instead of an error. The reader can sleep normally while an app is open and idle.
+
+- **Weather**: current conditions, feels-like, humidity, wind, UV, air quality (US AQI), pressure, dew point, sunrise and sunset, and a 5-day forecast from [Open-Meteo](https://open-meteo.com/) (no account or key needed). The city is found from your IP address, or picked from 28 cities with Right. Portrait and landscape layouts.
+- **Stock Ticker**: quotes for a watchlist of up to 24 symbols from Yahoo Finance, including indices such as `^GSPC` and non-US listings such as `7203.T`. Rows show price, change and percent change; the header line shows whether the market is open, and the footer shows local and exchange time and the quote age. Up, Down and Right (or a swipe left or right) change page. A symbol that fails to load keeps its last cached value, marked with `*`. Edit the watchlist from File Transfer at `/stocks`, or in `/.crosspoint/stock_watchlist.json`; the app's About page explains the format.
+
+Both apps have an **Options** page (Left, or tap the screen): refresh interval (Stock Ticker also has Auto: every 5 minutes while a market is open, hourly when all are closed), orientation, and whether to show the current temperature or index value next to the battery at the top of the screen. Confirm refreshes, as does a swipe down.
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="./docs/images/weather-app.png" alt="Weather app" width="220" /><br/>
+      <em>Weather</em>
+    </td>
+    <td align="center">
+      <img src="./docs/images/stock-ticker-app.png" alt="Stock Ticker app" width="220" /><br/>
+      <em>Stock Ticker</em>
+    </td>
+    <td align="center">
+      <img src="./docs/images/stock-ticker-options.png" alt="Stock Ticker options" width="220" /><br/>
+      <em>Options</em>
+    </td>
+  </tr>
+</table>
+
+<img src="./docs/images/header-app-values.png" alt="Index value and temperature next to the battery" width="420" />
+
+<sub>Screens captured in the simulator.</sub>
 
 ---
 

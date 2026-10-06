@@ -640,6 +640,25 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t libraryShowTxt = 1;
   uint8_t libraryShowMarkdown = 1;
   uint8_t libraryHideFinishedBooks = 0;
+  // Weather and Stock Ticker apps. Edited from each app's Options page, so like
+  // the library choices they stay out of the settings catalog and Web Settings.
+  // Interval fields index the tables in activities/apps/AppRefreshInterval.h.
+  static constexpr int APP_WEATHER_CITY_CHOICES = 29;  // Auto + 28 cities
+  static constexpr int APP_WEATHER_INTERVAL_CHOICES = 4;
+  static constexpr int APP_STOCK_INTERVAL_CHOICES = 7;
+  uint8_t weatherCity = 0;  // 0 = Auto (IP geolocation), N = WeatherParser::kCities[N - 1]
+  uint8_t weatherRefreshInterval = 1;
+  uint8_t weatherOrientation = PORTRAIT;
+  uint8_t weatherTopbarEnabled = 0;
+  // Last fetched temperature (rounded C) for the header; -128 = none yet.
+  int8_t weatherLastTempC = -128;
+  uint8_t stockRefreshInterval = 0;
+  uint8_t stockOrientation = PORTRAIT;
+  uint8_t stockTopbarEnabled = 0;
+  // Last fetched index value (first ^ symbol in the watchlist) for the header.
+  uint8_t stockTopbarValid = 0;
+  float stockTopbarValue = 0.0f;
+  float stockTopbarChangePct = 0.0f;
   // Hide file extensions in the file browser right-side value column (0 = show, 1 = hide)
   uint8_t hideFileExtension = 0;
   // File browser display row style (0 = one-line theme list, 1 = two-line compact display)

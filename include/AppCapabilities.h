@@ -27,7 +27,23 @@
 #error "CROSSINK_APP_CAP_CLAUDE_BUDDY must be 0 or 1"
 #endif
 
-#define CROSSINK_APP_HAS_APPS (CROSSINK_APP_CAP_CLAUDE_BUDDY)
+#ifndef CROSSINK_APP_CAP_WEATHER
+#error "Define CROSSINK_APP_CAP_WEATHER as 0 or 1 in the PlatformIO environment"
+#endif
+
+#if CROSSINK_APP_CAP_WEATHER != 0 && CROSSINK_APP_CAP_WEATHER != 1
+#error "CROSSINK_APP_CAP_WEATHER must be 0 or 1"
+#endif
+
+#ifndef CROSSINK_APP_CAP_STOCKS
+#error "Define CROSSINK_APP_CAP_STOCKS as 0 or 1 in the PlatformIO environment"
+#endif
+
+#if CROSSINK_APP_CAP_STOCKS != 0 && CROSSINK_APP_CAP_STOCKS != 1
+#error "CROSSINK_APP_CAP_STOCKS must be 0 or 1"
+#endif
+
+#define CROSSINK_APP_HAS_APPS (CROSSINK_APP_CAP_CLAUDE_BUDDY || CROSSINK_APP_CAP_WEATHER || CROSSINK_APP_CAP_STOCKS)
 
 // Native simulator BoardConfig intentionally exposes only simulated runtime
 // profiles, so keep this firmware-image identity available at the app layer.

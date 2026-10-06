@@ -172,7 +172,9 @@ enum UIIcon {
   Hotspot,
   Chart,
   Apps,
-  Bluetooth
+  Bluetooth,
+  Weather,
+  Stocks
 };
 
 // Default theme implementation (Classic Theme)

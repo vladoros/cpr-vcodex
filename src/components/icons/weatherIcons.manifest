@@ -1,0 +1,11 @@
+# Manifest for src/components/icons/weatherIcons.h — regenerate with:
+#   python3 scripts/generate_icons.py --library tabler \
+#     --manifest src/components/icons/weatherIcons.manifest \
+#     --sizes 32,64 --stroke-width 1.25 --out src/components/icons/weatherIcons.h
+wx_clear = sun
+wx_partly_cloudy = haze
+wx_cloud = cloud
+wx_fog = cloud-fog
+wx_rain = cloud-rain
+wx_snow = cloud-snow
+wx_storm = cloud-storm

@@ -37,6 +37,10 @@
 #include "html/LogoPng.generated.h"
 #include "html/SettingsPageHtml.generated.h"
 #include "html/StyleCss.generated.h"
+#if CROSSINK_APP_CAP_STOCKS
+#include "StockWatchlistStore.h"
+#include "html/StocksPageHtml.generated.h"
+#endif
 #include "html/js/jszip_minJs.generated.h"
 #include "util/BookCacheUtils.h"
 #include "util/BookMoveUtils.h"
@@ -412,6 +416,13 @@ void CrossPointWebServer::begin() {
   server->on("/api/opds", HTTP_GET, [this] { handleGetOpdsServers(); });
   server->on("/api/opds", HTTP_POST, [this] { handlePostOpdsServer(); });
   server->on("/api/opds/delete", HTTP_POST, [this] { handleDeleteOpdsServer(); });
+
+#if CROSSINK_APP_CAP_STOCKS
+  // Stock Ticker watchlist editor (the file lives under hidden /.crosspoint)
+  server->on("/stocks", HTTP_GET, [this] { handleStocksPage(); });
+  server->on("/api/stocks", HTTP_GET, [this] { handleGetStocks(); });
+  server->on("/api/stocks", HTTP_POST, [this] { handlePostStocks(); });
+#endif
 
   // Wi-Fi credential endpoints
   server->on("/api/wifi", HTTP_GET, [this] { handleGetWifiNetworks(); });
@@ -2257,6 +2268,75 @@ void CrossPointWebServer::onWebSocketEvent(uint8_t num, WStype_t type, uint8_t* 
 void CrossPointWebServer::handleFontsPage() const {
   sendStaticContent(server.get(), FontsPageHtml, sizeof(FontsPageHtml), FontsPageHtmlETag);
 }
+
+#if CROSSINK_APP_CAP_STOCKS
+// ---- Stock watchlist API ----
+
+namespace {
+// 24 symbols of at most 11 characters fit comfortably in this; anything larger
+// is not a watchlist the device would accept anyway.
+constexpr size_t kMaxStocksBody = 4096;
+
+void sendJsonError(WebServer& server, const int code, const char* message) {
+  JsonDocument doc;
+  doc["error"] = message;
+  String body;
+  serializeJson(doc, body);
+  server.send(code, "application/json", body);
+}
+}  // namespace
+
+void CrossPointWebServer::handleStocksPage() const {
+  sendStaticContent(server.get(), StocksPageHtml, sizeof(StocksPageHtml), StocksPageHtmlETag);
+}
+
+void CrossPointWebServer::handleGetStocks() const {
+  STOCK_WATCHLIST.ensureLoaded();
+  JsonDocument doc;
+  doc["path"] = StockWatchlistStore::getFilePath();
+  doc["maxSymbols"] = STOCK_MAX_SYMBOLS;
+  doc["fromFile"] = STOCK_WATCHLIST.isFromFile();
+  JsonArray symbols = doc["symbols"].to<JsonArray>();
+  for (int i = 0; i < STOCK_WATCHLIST.getCount(); i++) symbols.add(STOCK_WATCHLIST.getSymbol(i));
+  String body;
+  serializeJson(doc, body);
+  server->send(200, "application/json", body);
+}
+
+void CrossPointWebServer::handlePostStocks() {
+  if (!server->hasArg("plain")) {
+    sendJsonError(*server, 400, "Missing JSON body");
+    return;
+  }
+  const String& body = server->arg("plain");
+  if (body.length() > kMaxStocksBody) {
+    sendJsonError(*server, 413, "Watchlist too large");
+    return;
+  }
+  JsonDocument doc;
+  if (deserializeJson(doc, body)) {
+    sendJsonError(*server, 400, "Invalid JSON");
+    return;
+  }
+  STOCK_WATCHLIST.ensureLoaded();
+  if (!STOCK_WATCHLIST.applyFromJson(doc.as<JsonVariantConst>())) {
+    sendJsonError(*server, 400, "No valid symbols");
+    return;
+  }
+  if (!STOCK_WATCHLIST.saveAtomic()) {
+    sendJsonError(*server, 500, "Could not write the watchlist file");
+    return;
+  }
+  LOG_INF("WEB", "Stock watchlist saved: %d symbols", STOCK_WATCHLIST.getCount());
+  JsonDocument reply;
+  reply["ok"] = true;
+  reply["count"] = STOCK_WATCHLIST.getCount();
+  reply["maxSymbols"] = STOCK_MAX_SYMBOLS;
+  String out;
+  serializeJson(reply, out);
+  server->send(200, "application/json", out);
+}
+#endif
 
 void CrossPointWebServer::handleFontList() const {
   // Pick up any uploads/deletes that happened since the last reader load.

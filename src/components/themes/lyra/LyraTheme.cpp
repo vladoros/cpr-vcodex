@@ -13,11 +13,11 @@
 #include <string>
 #include <vector>
 
+#include "AppCapabilities.h"
 #include "DeviceCapabilities.h"
 #include "RecentBooksStore.h"
 #include "activities/reader/BookReadingStats.h"
 #include "components/TouchRegistry.h"
-#include "AppCapabilities.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
 #include "components/icons/readingStatsIcons.h"
@@ -86,6 +86,10 @@ const freeink::Icon* LyraTheme::iconForName(UIIcon icon, uint32_t size) {
         return &icon_apps_24;
       case UIIcon::Bluetooth:
         return &icon_bluetooth_24;
+      case UIIcon::Weather:
+        return &icon_weather_24;
+      case UIIcon::Stocks:
+        return &icon_stocks_24;
 #endif
       default:
         return nullptr;
@@ -117,6 +121,10 @@ const freeink::Icon* LyraTheme::iconForName(UIIcon icon, uint32_t size) {
         return &icon_apps_32;
       case UIIcon::Bluetooth:
         return &icon_bluetooth_32;
+      case UIIcon::Weather:
+        return &icon_weather_32;
+      case UIIcon::Stocks:
+        return &icon_stocks_32;
 #endif
       default:
         return nullptr;

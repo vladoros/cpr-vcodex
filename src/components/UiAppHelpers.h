@@ -6,9 +6,9 @@
 #include <atomic>
 #include <cstdint>
 
+#include "AppCapabilities.h"
 #include "MappedInputManager.h"
 #include "components/UIScale.h"
-#include "AppCapabilities.h"
 #include "components/UITheme.h"
 #include "components/UIThemeTokens.h"
 #include "components/icons/listIcons.h"
@@ -113,6 +113,10 @@ inline freeink::ui::BitmapRef listIconFor(const UIIcon icon, const int size = 24
         return freeink::ui::bitmapFromIcon(icon_apps_32);
       case UIIcon::Bluetooth:
         return freeink::ui::bitmapFromIcon(icon_bluetooth_32);
+      case UIIcon::Weather:
+        return freeink::ui::bitmapFromIcon(icon_weather_32);
+      case UIIcon::Stocks:
+        return freeink::ui::bitmapFromIcon(icon_stocks_32);
 #endif
       default:
         return {};
@@ -142,6 +146,10 @@ inline freeink::ui::BitmapRef listIconFor(const UIIcon icon, const int size = 24
       return freeink::ui::bitmapFromIcon(icon_apps_24);
     case UIIcon::Bluetooth:
       return freeink::ui::bitmapFromIcon(icon_bluetooth_24);
+    case UIIcon::Weather:
+      return freeink::ui::bitmapFromIcon(icon_weather_24);
+    case UIIcon::Stocks:
+      return freeink::ui::bitmapFromIcon(icon_stocks_24);
 #endif
     default:
       return {};

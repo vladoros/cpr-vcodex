@@ -1,5 +1,6 @@
 #pragma once
 
+#include <AppCapabilities.h>
 #include <HalStorage.h>
 #include <NetworkUdp.h>
 #include <WebServer.h>
@@ -127,6 +128,11 @@ class CrossPointWebServer {
 
   // Font management handlers
   void handleFontsPage() const;
+#if CROSSINK_APP_CAP_STOCKS
+  void handleStocksPage() const;
+  void handleGetStocks() const;
+  void handlePostStocks();
+#endif
   void handleFontList() const;
   void handleFontUpload();
   void handleFontUploadData();

@@ -29,6 +29,9 @@ The main data directory is `.crosspoint` on the SD card. It stores render caches
 ├── wifi.json               # Saved Wi-Fi networks
 ├── opds.json               # Saved OPDS servers
 ├── koreader.json           # KOReader sync credentials
+├── weather_cache.json      # Weather app: last fetched conditions and forecast
+├── stock_cache.json        # Stock Ticker app: last fetched quotes
+├── stock_watchlist.json    # Stock Ticker watchlist (user-edited; written only from /stocks)
 ├── bookmarks/              # Bookmark files, one per book
 ├── clippings/              # EPUB clipping/highlight files, one per book
 ├── home_carousel_cache_<index>.bin # Lyra Carousel artwork cache for each book position

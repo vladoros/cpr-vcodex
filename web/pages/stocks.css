@@ -1,0 +1,70 @@
+.meta {
+  color: var(--label-color);
+  font-size: 0.9em;
+  margin: 0 0 12px;
+  word-break: break-all;
+}
+textarea {
+  width: 100%;
+  min-height: 280px;
+  box-sizing: border-box;
+  padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  color: var(--font-color);
+  background: var(--bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+.counter {
+  color: var(--label-color);
+  font-size: 0.9em;
+}
+.counter.too-large {
+  color: var(--danger-color);
+}
+.btn {
+  padding: 8px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+.btn-primary {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+}
+.btn-primary:hover {
+  background: var(--accent-hover-color);
+  border-color: var(--accent-hover-color);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.message {
+  margin-top: 10px;
+  font-size: 0.9em;
+  min-height: 1.2em;
+}
+.message.ok {
+  color: var(--success-color);
+}
+.message.err {
+  color: var(--danger-color);
+}
+.hint {
+  color: var(--label-color);
+  font-size: 0.85em;
+  margin: 14px 0 0;
+}

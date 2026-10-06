@@ -482,6 +482,18 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   doc["libraryShowTxt"] = libraryShowTxt;
   doc["libraryShowMarkdown"] = libraryShowMarkdown;
   doc["libraryHideFinishedBooks"] = libraryHideFinishedBooks;
+  doc["weatherCity"] = weatherCity;
+  doc["weatherRefreshInterval"] = weatherRefreshInterval;
+  doc["weatherOrientation"] = weatherOrientation;
+  doc["weatherTopbarEnabled"] = weatherTopbarEnabled;
+  doc["weatherLastTempC"] = weatherLastTempC;
+  doc["stockRefreshInterval"] = stockRefreshInterval;
+  doc["stockOrientation"] = stockOrientation;
+  doc["stockTopbarEnabled"] = stockTopbarEnabled;
+  if (stockTopbarValid) {
+    doc["stockTopbarValue"] = stockTopbarValue;
+    doc["stockTopbarChangePct"] = stockTopbarChangePct;
+  }
 
   doc["frontButtonBack"] = frontButtonBack;
   doc["frontButtonConfirm"] = frontButtonConfirm;
@@ -677,6 +689,17 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc, bool importingCrossPoint
   readLibraryChoice("libraryShowTxt", libraryShowTxt, 2);
   readLibraryChoice("libraryShowMarkdown", libraryShowMarkdown, 2);
   readLibraryChoice("libraryHideFinishedBooks", libraryHideFinishedBooks, 2);
+  readLibraryChoice("weatherCity", weatherCity, APP_WEATHER_CITY_CHOICES);
+  readLibraryChoice("weatherRefreshInterval", weatherRefreshInterval, APP_WEATHER_INTERVAL_CHOICES);
+  readLibraryChoice("weatherOrientation", weatherOrientation, ORIENTATION_COUNT);
+  readLibraryChoice("weatherTopbarEnabled", weatherTopbarEnabled, 2);
+  weatherLastTempC = static_cast<int8_t>(std::clamp(doc["weatherLastTempC"] | -128, -128, 127));
+  readLibraryChoice("stockRefreshInterval", stockRefreshInterval, APP_STOCK_INTERVAL_CHOICES);
+  readLibraryChoice("stockOrientation", stockOrientation, ORIENTATION_COUNT);
+  readLibraryChoice("stockTopbarEnabled", stockTopbarEnabled, 2);
+  stockTopbarValid = doc["stockTopbarValue"].is<float>() ? 1 : 0;
+  stockTopbarValue = doc["stockTopbarValue"] | 0.0f;
+  stockTopbarChangePct = doc["stockTopbarChangePct"] | 0.0f;
 
   // Only the generic-file fallback imports CrossPoint's combined touch mode.
   // Explicit CrossInk gesture keys identify a CrossInk document, even at the old path.

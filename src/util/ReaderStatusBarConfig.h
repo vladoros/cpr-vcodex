@@ -25,6 +25,11 @@ enum class ReaderStatusBarItem : uint8_t {
   TitleChapter,
   Date,
   Count,
+  // Runtime-only header values from the network apps. They sit past Count so
+  // the persisted-config validators never accept them; drawDisplayStatusBar
+  // injects them into the display bar's unused right-hand slots.
+  AppWeather = 32,
+  AppStockIndex,
 };
 
 constexpr bool validReaderStatusBarItemValue(const int value, const bool clockAvailable) {

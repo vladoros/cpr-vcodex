@@ -13,6 +13,12 @@
 #if CROSSINK_APP_CAP_CLAUDE_BUDDY
 #include "claude_buddy/ClaudeBuddyActivity.h"
 #endif
+#if CROSSINK_APP_CAP_STOCKS
+#include "stocks/StockTickerActivity.h"
+#endif
+#if CROSSINK_APP_CAP_WEATHER
+#include "weather/WeatherActivity.h"
+#endif
 
 namespace fui = freeink::ui;
 
@@ -59,6 +65,16 @@ void AppsActivity::openApp(const AppId id) {
     case AppId::ClaudeBuddy:
 #if CROSSINK_APP_CAP_CLAUDE_BUDDY
       app = makeUniqueNoThrow<ClaudeBuddyActivity>(renderer, mappedInput);
+#endif
+      break;
+    case AppId::Weather:
+#if CROSSINK_APP_CAP_WEATHER
+      app = makeUniqueNoThrow<WeatherActivity>(renderer, mappedInput);
+#endif
+      break;
+    case AppId::StockTicker:
+#if CROSSINK_APP_CAP_STOCKS
+      app = makeUniqueNoThrow<StockTickerActivity>(renderer, mappedInput);
 #endif
       break;
   }

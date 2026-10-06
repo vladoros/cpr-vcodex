@@ -1,5 +1,6 @@
 #include "BaseTheme.h"
 
+#include <AppCapabilities.h>
 #include <FreeInkUIGfxRenderer.h>
 #include <GfxRenderer.h>
 #include <HalClock.h>
@@ -10,6 +11,7 @@
 #include <Memory.h>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
@@ -27,6 +29,12 @@
 #include "components/UITheme.h"
 #include "components/UIThemeTokens.h"
 #include "fontIds.h"
+#if CROSSINK_APP_CAP_STOCKS
+#include <StockFormat.h>
+#endif
+#if CROSSINK_APP_CAP_WEATHER
+#include <WeatherTypes.h>
+#endif
 
 // Internal constants
 namespace {
@@ -916,6 +924,22 @@ void BaseTheme::drawReaderStatusBar(const GfxRenderer& renderer, const ReaderSta
         return content.bookTitle;
       case ReaderStatusBarItem::TitleChapter:
         return content.chapterTitle;
+#if CROSSINK_APP_CAP_WEATHER
+      case ReaderStatusBarItem::AppWeather:
+        snprintf(scratch, len, "%d\xC2\xB0", static_cast<int>(SETTINGS.weatherLastTempC));
+        return scratch;
+#endif
+#if CROSSINK_APP_CAP_STOCKS
+      case ReaderStatusBarItem::AppStockIndex: {
+        char value[24];
+        StockFormat::stockFormatNumber(SETTINGS.stockTopbarValue, SETTINGS.stockTopbarValue >= 1000.0f ? 0 : 2, value,
+                                       sizeof(value));
+        char percent[16];
+        StockFormat::stockFormatPercent(SETTINGS.stockTopbarChangePct, percent, sizeof(percent));
+        snprintf(scratch, len, "%s %s", value, percent);
+        return scratch;
+      }
+#endif
       default:
         return nullptr;
     }
@@ -1004,7 +1028,29 @@ void BaseTheme::drawDisplayStatusBar(const GfxRenderer& renderer, const int topY
   ReaderStatusBarContent content;
   content.outsideReader = true;
   content.previewOriginY = topY + UITheme::getTopStatusBarInset(renderer);
-  const auto config = SETTINGS.displayStatusBar.asReaderConfig();
+  auto config = SETTINGS.displayStatusBar.asReaderConfig();
+  // The display bar configures one slot per side. The optional app values go
+  // to the left of the configured right-hand item, which keeps the screen edge;
+  // right-hand slots run from the inside (RIGHT_FIRST) out to the edge.
+  std::array<ReaderStatusBarItem, 3> rightItems{};
+  size_t rightCount = 0;
+#if CROSSINK_APP_CAP_STOCKS
+  if (SETTINGS.stockTopbarEnabled && SETTINGS.stockTopbarValid) {
+    rightItems[rightCount++] = ReaderStatusBarItem::AppStockIndex;
+  }
+#endif
+#if CROSSINK_APP_CAP_WEATHER
+  if (SETTINGS.weatherTopbarEnabled && SETTINGS.weatherLastTempC != WEATHER_TEMP_UNAVAILABLE) {
+    rightItems[rightCount++] = ReaderStatusBarItem::AppWeather;
+  }
+#endif
+  if (rightCount > 0) {
+    const auto configured = config.slots[ReaderStatusBarConfig::RIGHT_FIRST];
+    if (configured != ReaderStatusBarItem::Empty) rightItems[rightCount++] = configured;
+    for (size_t i = 0; i < rightItems.size(); ++i) {
+      config.slots[ReaderStatusBarConfig::RIGHT_FIRST + i] = rightItems[i];
+    }
+  }
   drawReaderStatusBar(renderer, ReaderStatusBarPosition::Top, content, &config);
 }
 

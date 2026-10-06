@@ -4,3 +4,5 @@
 #     --sizes 24,32 --stroke-width 1.25 --out src/components/icons/appsIcons.h
 apps = apps
 bluetooth = bluetooth
+weather = cloud
+stocks = chart-line

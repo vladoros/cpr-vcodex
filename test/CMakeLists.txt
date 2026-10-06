@@ -109,3 +109,4 @@ add_subdirectory(scalable_fonts)
 
 add_subdirectory(glyph_bitmap)
 add_subdirectory(claude_buddy)
+add_subdirectory(apps_data)
