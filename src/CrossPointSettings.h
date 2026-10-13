@@ -644,7 +644,7 @@ class CrossPointSettings {
   uint8_t webDashOrientation = WD_PORTRAIT;
   // WebDash shortcut fields (existing pattern)
   uint8_t webDashShortcut = SHORTCUT_APPS;
-  uint8_t webDashShortcutOrder = 20;
+  uint8_t webDashShortcutOrder = 22;
   uint8_t webDashShortcutVisible = 1;
 
   // Weather app settings
@@ -652,7 +652,7 @@ class CrossPointSettings {
   uint8_t weatherCity = WEATHER_CITY_AUTO;  // 0=Auto (IP geolocation), 1..WEATHER_CITY_LAST=manual city
   // Weather shortcut fields (existing pattern)
   uint8_t weatherShortcut = SHORTCUT_APPS;
-  uint8_t weatherShortcutOrder = 21;
+  uint8_t weatherShortcutOrder = 23;
   uint8_t weatherShortcutVisible = 1;
 
   // Weather top bar + last-known temperature cache (degrees Celsius).
@@ -687,7 +687,7 @@ class CrossPointSettings {
   bool stockTopbarChangePositive = true;
 
   uint8_t stockShortcut = SHORTCUT_APPS;
-  uint8_t stockShortcutOrder = 22;
+  uint8_t stockShortcutOrder = 24;
   uint8_t stockShortcutVisible = 1;
 
   ~CrossPointSettings() = default;
