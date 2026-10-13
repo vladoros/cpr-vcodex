@@ -18,6 +18,8 @@ enum class BootStage : uint8_t {
   Favorites,
   Flashcards,
   Achievements,
+  WeatherCache,
+  StockCache,
   RouteDecision,
   Completed,
 };
@@ -42,5 +44,7 @@ bool shouldSkipRecentBooks();
 bool shouldSkipFavorites();
 bool shouldSkipFlashcards();
 bool shouldSkipAchievements();
+bool shouldSkipWeatherCache();
+bool shouldSkipStockCache();
 
 }  // namespace BootRecovery

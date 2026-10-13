@@ -20,6 +20,9 @@
 #include "ScreenCleanActivity.h"
 #include "SleepAppActivity.h"
 #include "SyncDayActivity.h"
+#include "StockTickerActivity.h"
+#include "WeatherActivity.h"
+#include "WebDashActivity.h"
 #include "activities/browser/OpdsBookBrowserActivity.h"
 #include "activities/home/FileBrowserActivity.h"
 #include "activities/home/RecentBooksActivity.h"
@@ -225,6 +228,15 @@ void AppsActivity::openApp(const int index) {
       break;
     case ShortcutId::Plugins:
       activity = std::make_unique<PluginCatalogActivity>(renderer, mappedInput, OPDS_STORE.hasServers());
+      break;
+    case ShortcutId::WebDash:
+      activity = std::make_unique<WebDashActivity>(renderer, mappedInput);
+      break;
+    case ShortcutId::Weather:
+      activity = std::make_unique<WeatherActivity>(renderer, mappedInput);
+      break;
+    case ShortcutId::StockTicker:
+      activity = std::make_unique<StockTickerActivity>(renderer, mappedInput);
       break;
   }
 

@@ -29,6 +29,8 @@
 #include "components/icons/transfer.h"
 #include "components/icons/trophy.h"
 #include "components/icons/trophy24.h"
+#include "components/icons/stock.h"
+#include "components/icons/weather.h"
 #include "components/icons/wifi.h"
 #include "fontIds.h"
 
@@ -96,6 +98,10 @@ const uint8_t* iconForName(UIIcon icon, int size) {
         return HotspotIcon;
       case UIIcon::Heart:
         return HeartIcon;
+      case UIIcon::Weather:
+        return WeatherAppIcon;
+      case UIIcon::StockTicker:
+        return StockTickerIcon;
       default:
         return nullptr;
     }
