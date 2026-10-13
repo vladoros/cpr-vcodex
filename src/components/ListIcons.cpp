@@ -42,9 +42,14 @@ freeink::ui::BitmapRef listIconFor(const UIIcon icon, const int size) {
         return freeink::ui::bitmapFromIcon(icon_settings_2_32);
       case UIIcon::Transfer:
         return freeink::ui::bitmapFromIcon(icon_arrow_right_left_32);
+
       case UIIcon::Plugins:
       case UIIcon::Blocks:
         return freeink::ui::bitmapFromIcon(icon_blocks_32);
+      case UIIcon::Weather:
+        return freeink::ui::bitmapFromIcon(icon_weather_cloud_32);
+      case UIIcon::StockTicker:
+        return freeink::ui::bitmapFromIcon(icon_stock_trending_32);
       default:
         return {};
     }
