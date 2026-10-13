@@ -115,6 +115,10 @@ if(Python3_Interpreter_FOUND)
     NAME firmware_budget_report_regressions
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/release_tools/FirmwareBudgetReportTest.py
   )
+  add_test(
+    NAME settings_list_reserve_regressions
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/settings_reserve/SettingsReserveTest.py
+  )
 endif()
 add_subdirectory(content_opf_parser)
 add_subdirectory(chapter_position)

@@ -343,7 +343,9 @@ std::vector<SettingInfo> buildSystemSettings() {
 std::vector<SettingInfo> buildAppSettings() {
   const bool rtcClockActive = SETTINGS.isHardwareRtcAutoDayClockActive();
   std::vector<SettingInfo> v;
-  v.reserve(48);
+  // Must cover every row below: growing past this doubles the vector, and that
+  // contiguous block can fail to allocate on a fragmented device heap.
+  v.reserve(56);
   v.push_back(SettingInfo::Section(StrId::STR_SYNC_DAY));
   if (rtcClockActive) {
     v.push_back(SettingInfo::Action(StrId::STR_CLOCK_SYNC_NOW, SettingAction::ClockSync));
