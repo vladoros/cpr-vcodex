@@ -10,12 +10,16 @@
 #include "CrossPointSettings.h"
 #include "CrossPointState.h"
 #include "ReadingStatsStore.h"
+#include "StockFormat.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 #include "util/HeaderStatusLayout.h"
 #include "util/TimeUtils.h"
 
 namespace {
+constexpr int CLUSTER_GAP = 8;
+constexpr int STOCK_ARROW_LEFT = 13;
+
 void drawHeaderTopLine(const GfxRenderer& renderer, const ThemeMetrics& metrics, const int pageWidth,
                        const std::string& dateText, const std::string& reminderText) {
   namespace fui = freeink::ui;
@@ -44,16 +48,64 @@ void drawHeaderTopLine(const GfxRenderer& renderer, const ThemeMetrics& metrics,
     renderer.drawText(SMALL_FONT_ID, x, y, text.c_str());
   };
 
-  int dateX = available.right;
-  if (!dateText.empty()) {
-    if (dateWidth <= available.width()) {
+  // Optional weather/stock cluster sits between the date and the battery/clock
+  // status, right to left: weather temperature, then the stock value + arrow.
+  int clusterRight = available.right;
+
+  char weatherTempText[8] = "";
+  const bool showWeatherTemp =
+      SETTINGS.weatherTopbarEnabled && SETTINGS.weatherLastTempC != CrossPointSettings::WEATHER_TEMP_UNAVAILABLE;
+  int weatherTempX = -1;
+  if (showWeatherTemp) {
+    snprintf(weatherTempText, sizeof(weatherTempText), "%d\xC2\xB0" "C", SETTINGS.weatherLastTempC);
+    weatherTempX = clusterRight - renderer.getTextWidth(SMALL_FONT_ID, weatherTempText);
+    clusterRight = weatherTempX - CLUSTER_GAP;
+  }
+
+  char stockText[16] = "";
+  int stockX = -1;
+  const bool showStock = SETTINGS.stockTopbarEnabled && SETTINGS.stockTopbarValid;
+  if (showStock) {
+    StockFormat::stockFormatNumber(SETTINGS.stockTopbarValue, 2, stockText, sizeof(stockText));
+    stockX = clusterRight - renderer.getTextWidth(SMALL_FONT_ID, stockText);
+    clusterRight = stockX - STOCK_ARROW_LEFT - CLUSTER_GAP;
+  }
+
+  const int dateAvailable = clusterRight - available.left;
+  int dateX = clusterRight;
+  if (!dateText.empty() && dateAvailable > 0) {
+    if (dateWidth <= dateAvailable) {
       dateX -= dateWidth;
       drawText(dateX, dateText);
     } else {
-      const std::string fitted = renderer.truncatedText(SMALL_FONT_ID, dateText.c_str(), available.width());
+      const std::string fitted = renderer.truncatedText(SMALL_FONT_ID, dateText.c_str(), dateAvailable);
       dateX -= renderer.getTextWidth(SMALL_FONT_ID, fitted.c_str());
       drawText(dateX, fitted);
     }
+  }
+
+  if (showStock) {
+    drawText(stockX, stockText);
+    // Centre the arrow on the digits' ink (the value's own vertical centring
+    // includes the comma descender, so the strip centre sits too low).
+    const auto textInk = target.inkBounds(fui::GfxRendererTarget::FONT_LABEL, stockText, status.battery.text);
+    const auto digitInk = target.inkBounds(fui::GfxRendererTarget::FONT_LABEL, "0", status.battery.text);
+    const int textY = metrics.topPadding + (status.stripHeight - textInk.height) / 2 - textInk.y;
+    const int arrowY = textY + digitInk.y + digitInk.height / 2 - 2;
+    const int cx = stockX - 9;
+    if (SETTINGS.stockTopbarChangePositive) {
+      renderer.drawLine(cx - 4, arrowY + 4, cx, arrowY, true);
+      renderer.drawLine(cx, arrowY, cx + 4, arrowY + 4, true);
+      renderer.drawLine(cx - 4, arrowY + 4, cx + 4, arrowY + 4, true);
+    } else {
+      renderer.drawLine(cx - 4, arrowY, cx, arrowY + 4, true);
+      renderer.drawLine(cx, arrowY + 4, cx + 4, arrowY, true);
+      renderer.drawLine(cx - 4, arrowY, cx + 4, arrowY, true);
+    }
+  }
+
+  if (showWeatherTemp) {
+    drawText(weatherTempX, weatherTempText);
   }
 
   if (!reminderText.empty()) {

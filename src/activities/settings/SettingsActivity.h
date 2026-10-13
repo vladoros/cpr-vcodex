@@ -54,6 +54,7 @@ enum class SettingAction {
   IfFound,
   HomeButton,
   About,
+  StockTickerInfo,
 };
 
 struct SettingInfo {

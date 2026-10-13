@@ -44,6 +44,7 @@
 #include "SdCardFontGlobals.h"
 #include "SdCardFontSystem.h"
 #include "SettingsList.h"
+#include "StockWatchlistStore.h"
 #include "WebDAVHandler.h"
 #include "WifiCredentialStore.h"
 #include "WifiPowerSaveGuard.h"
@@ -53,6 +54,7 @@
 #include "html/IfFoundPageHtml.generated.h"
 #include "html/RunnerPageHtml.generated.h"
 #include "html/SettingsPageHtml.generated.h"
+#include "html/StocksPageHtml.generated.h"
 #include "html/js/jszip_minJs.generated.h"
 #include "util/BookCacheUtils.h"
 #include "util/IfFoundFile.h"
@@ -669,6 +671,11 @@ void CrossPointWebServer::begin() {
   server->on("/settings", HTTP_GET, [this] { handleSettingsPage(); });
   server->on("/api/settings", HTTP_GET, [this] { handleGetSettings(); });
   server->on("/api/settings", HTTP_POST, [this] { handlePostSettings(); });
+
+  // Stock watchlist endpoints
+  server->on("/stocks", HTTP_GET, [this] { handleStocksPage(); });
+  server->on("/api/stocks", HTTP_GET, [this] { handleGetStocks(); });
+  server->on("/api/stocks", HTTP_POST, [this] { handlePostStocks(); });
 
   // Font management endpoints
   server->on("/fonts", HTTP_GET, [this] { handleFontsPage(); });
@@ -2166,6 +2173,72 @@ void CrossPointWebServer::handleDelete() const {
 void CrossPointWebServer::handleSettingsPage() const {
   sendStaticContent(server.get(), SettingsPageHtml, sizeof(SettingsPageHtml), SettingsPageHtmlETag, "text/html");
   LOG_DBG("WEB", "Served settings page");
+}
+
+void CrossPointWebServer::handleStocksPage() const {
+  sendStaticContent(server.get(), StocksPageHtml, sizeof(StocksPageHtml), StocksPageHtmlETag, "text/html");
+  LOG_DBG("WEB", "Served stock watchlist page");
+}
+
+void CrossPointWebServer::handleGetStocks() const {
+  server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server->send(200, "application/json", "");
+  server->sendContent("{\"path\":");
+  sendJsonEscaped(server.get(), StockWatchlistStore::getFilePath());
+  server->sendContent(",\"maxSymbols\":");
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "%d", STOCK_MAX_SYMBOLS);
+  server->sendContent(buffer);
+  server->sendContent(",\"fromFile\":");
+  server->sendContent(STOCK_WATCHLIST.isFromFile() ? "true" : "false");
+  server->sendContent(",\"symbols\":[");
+  for (int i = 0; i < STOCK_WATCHLIST.getCount(); i++) {
+    if (i > 0) server->sendContent(",");
+    sendJsonEscaped(server.get(), STOCK_WATCHLIST.getSymbol(i));
+  }
+  server->sendContent("]}");
+  server->sendContent("");
+  LOG_DBG("WEB", "Served stock watchlist: %d symbols", STOCK_WATCHLIST.getCount());
+}
+
+void CrossPointWebServer::handlePostStocks() {
+  const String body = server->arg("plain");
+  // Bound the parse before touching the heap: the file is at most 24 symbols,
+  // so a multi-KB body is either a mistake or an attack.
+  constexpr size_t MAX_BODY = 4096;
+  if (static_cast<size_t>(body.length()) > MAX_BODY) {
+    server->send(413, "application/json", "{\"error\":\"Body is too large\"}");
+    return;
+  }
+
+  JsonDocument doc;
+  const DeserializationError err = deserializeJson(doc, body);
+  if (err) {
+    server->send(400, "application/json", "{\"error\":\"Invalid JSON\"}");
+    return;
+  }
+
+  if (!STOCK_WATCHLIST.applyFromJson(doc.as<JsonVariantConst>())) {
+    server->send(400, "application/json", "{\"error\":\"No valid symbols\"}");
+    return;
+  }
+  if (!STOCK_WATCHLIST.saveAtomic()) {
+    server->send(500, "application/json", "{\"error\":\"Could not save the watchlist\"}");
+    return;
+  }
+
+  server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server->send(200, "application/json", "");
+  server->sendContent("{\"ok\":true,\"count\":");
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "%d", STOCK_WATCHLIST.getCount());
+  server->sendContent(buffer);
+  server->sendContent(",\"maxSymbols\":");
+  snprintf(buffer, sizeof(buffer), "%d", STOCK_MAX_SYMBOLS);
+  server->sendContent(buffer);
+  server->sendContent("}");
+  server->sendContent("");
+  LOG_DBG("WEB", "Saved stock watchlist: %d symbols", STOCK_WATCHLIST.getCount());
 }
 
 void CrossPointWebServer::handleGetSettings() const {

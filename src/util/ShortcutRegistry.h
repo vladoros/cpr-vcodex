@@ -29,6 +29,9 @@ enum class ShortcutId {
   OpdsBrowser,
   Library,
   Plugins,
+  WebDash,
+  Weather,
+  StockTicker,
 };
 
 struct ShortcutDefinition {
@@ -41,8 +44,8 @@ struct ShortcutDefinition {
   uint8_t CrossPointSettings::* visiblePtr;
 };
 
-inline const std::array<ShortcutDefinition, 19>& getShortcutDefinitions() {
-  static const std::array<ShortcutDefinition, 19> definitions = {
+inline const std::array<ShortcutDefinition, 22>& getShortcutDefinitions() {
+  static const std::array<ShortcutDefinition, 22> definitions = {
       ShortcutDefinition{ShortcutId::BrowseFiles, StrId::STR_BROWSE_FILES, StrId::STR_NONE_OPT, UIIcon::Folder,
                          &CrossPointSettings::browseFilesShortcut, &CrossPointSettings::browseFilesShortcutOrder,
                          &CrossPointSettings::browseFilesShortcutVisible},
@@ -107,6 +110,15 @@ inline const std::array<ShortcutDefinition, 19>& getShortcutDefinitions() {
       ShortcutDefinition{ShortcutId::Plugins, StrId::STR_PLUGINS, StrId::STR_NONE_OPT, UIIcon::Plugins,
                          &CrossPointSettings::pluginsShortcut, &CrossPointSettings::pluginsShortcutOrder,
                          &CrossPointSettings::pluginsShortcutVisible},
+      ShortcutDefinition{ShortcutId::WebDash, StrId::STR_WEB_DASH, StrId::STR_WEB_DASH_DESC, UIIcon::Image,
+                         &CrossPointSettings::webDashShortcut, &CrossPointSettings::webDashShortcutOrder,
+                         &CrossPointSettings::webDashShortcutVisible},
+      ShortcutDefinition{ShortcutId::Weather, StrId::STR_WEATHER, StrId::STR_WEATHER_DESC, UIIcon::Weather,
+                         &CrossPointSettings::weatherShortcut, &CrossPointSettings::weatherShortcutOrder,
+                         &CrossPointSettings::weatherShortcutVisible},
+      ShortcutDefinition{ShortcutId::StockTicker, StrId::STR_STOCK_TICKER, StrId::STR_STOCK_TICKER_DESC,
+                         UIIcon::StockTicker, &CrossPointSettings::stockShortcut,
+                         &CrossPointSettings::stockShortcutOrder, &CrossPointSettings::stockShortcutVisible},
   };
 
   return definitions;
